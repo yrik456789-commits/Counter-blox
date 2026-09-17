@@ -1,6 +1,6 @@
 --[[
-    Project Sky - Murder Mystery 2 (Role-Based ESP)
-    Roles: Murderer (Red), Sheriff (Blue), Innocent (Green), Lobby (Gray)
+    Project Sky - Murder Mystery 2 (Roles ESP + Advanced Misc)
+    Tabs: Visuals, Misc (Anti-Fling, Target Fling [Downwards], Fly, Noclip, Spin)
 ]]--
 
 if _G.ProjectSkyMM2Loaded then
@@ -13,10 +13,11 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
+local Camera = Workspace.CurrentCamera
 
--- Настройки функций
+-- Настройки скрипта
 local Settings = {
     Visuals = {
         Highlight = false,
@@ -25,25 +26,31 @@ local Settings = {
         BulletTracers = false,
         BulletTracerMode = "Simple",
         BulletTracerColor = Color3.fromRGB(255, 170, 0)
+    },
+    Misc = {
+        AntiFling = false,
+        TargetFlingEnabled = false,
+        SelectedTarget = nil,
+        Fly = false,
+        FlySpeed = 50,
+        Noclip = false,
+        Spin = false,
+        SpinSpeed = 50
     }
 }
 
--- Цвета ролей
+-- Цвета ролей для ESP
 local Colors = {
-    Lobby = Color3.fromRGB(150, 150, 150),     -- Серый
-    Innocent = Color3.fromRGB(0, 255, 127),     -- Зеленый
-    Sheriff = Color3.fromRGB(0, 150, 255),      -- Синий
-    Murderer = Color3.fromRGB(255, 50, 50)      -- Красный
+    Lobby = Color3.fromRGB(150, 150, 150),
+    Innocent = Color3.fromRGB(0, 255, 127),
+    Sheriff = Color3.fromRGB(0, 150, 255),
+    Murderer = Color3.fromRGB(255, 50, 50)
 }
 
--- Функция определения роли игрока
 local function getPlayerRole(player)
     local char = player.Character
     local backpack = player:FindFirstChildOfClass("Backpack")
-    
-    -- Проверяем наличие ножа или пистолета в рюкзаке или на персонаже
-    local hasKnife = false
-    local hasGun = false
+    local hasKnife, hasGun = false, false
     
     if char then
         for _, item in ipairs(char:GetChildren()) do
@@ -65,7 +72,6 @@ local function getPlayerRole(player)
         end
     end
     
-    -- Если раунд еще не начался (все в лобби/нет инструментов)
     if not hasKnife and not hasGun and (not char or not char:FindFirstChild("HumanoidRootPart")) then
         return "Lobby", Colors.Lobby
     end
@@ -79,7 +85,7 @@ local function getPlayerRole(player)
     end
 end
 
--- Создание главного UI
+-- Создание UI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ProjectSkyMM2"
 ScreenGui.Parent = CoreGui
@@ -89,8 +95,8 @@ MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -225, 0.5, -150)
-MainFrame.Size = UDim2.new(0, 450, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -160)
+MainFrame.Size = UDim2.new(0, 450, 0, 320)
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 8)
@@ -101,7 +107,7 @@ MainStroke.Parent = MainFrame
 MainStroke.Color = Color3.fromRGB(40, 40, 55)
 MainStroke.Thickness = 1.5
 
--- Шапка (для перетаскивания)
+-- Шапка (Перетаскивание)
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
 TopBar.Parent = MainFrame
@@ -114,12 +120,11 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.Size = UDim2.new(1, -15, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Project Sky | MM2 Roles ESP"
+Title.Text = "Project Sky | MM2 Advanced"
 Title.TextColor3 = Color3.fromRGB(255, 170, 0)
 Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Логика перетаскивания окна
 local dragging, dragInput, dragStart, startPos
 TopBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -157,7 +162,7 @@ TabListLayout.Parent = TabContainer
 TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 TabListLayout.Padding = UDim.new(0, 5)
 
--- Правая панель (Контент вкладок)
+-- Правая панель (Контент)
 local ContentContainer = Instance.new("Frame")
 ContentContainer.Parent = MainFrame
 ContentContainer.BackgroundTransparency = 1
@@ -218,7 +223,7 @@ local function addToggle(parent, text, callback)
     local toggleBtn = Instance.new("TextButton")
     toggleBtn.Parent = parent
     toggleBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    toggleBtn.Size = UDim2.new(1, -10, 0, 36)
+    toggleBtn.Size = UDim2.new(1, -10, 0, 34)
     toggleBtn.Font = Enum.Font.Gotham
     toggleBtn.Text = "  " .. text .. ": OFF"
     toggleBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
@@ -238,25 +243,17 @@ local function addToggle(parent, text, callback)
     end)
 end
 
--- Создаем вкладку VISUALS
+-- ==================== ВКЛАДКА 1: VISUALS ====================
 local VisualsTab = createTab("VISUALS")
 
-addToggle(VisualsTab, "Highlight ESP", function(state)
-    Settings.Visuals.Highlight = state
-end)
-
-addToggle(VisualsTab, "Boxes ESP", function(state)
-    Settings.Visuals.Boxes = state
-end)
-
-addToggle(VisualsTab, "Tracers", function(state)
-    Settings.Visuals.Tracers = state
-end)
+addToggle(VisualsTab, "Highlight ESP", function(state) Settings.Visuals.Highlight = state end)
+addToggle(VisualsTab, "Boxes ESP", function(state) Settings.Visuals.Boxes = state end)
+addToggle(VisualsTab, "Tracers", function(state) Settings.Visuals.Tracers = state end)
 
 local bulletSubFrame = Instance.new("Frame")
 bulletSubFrame.Parent = VisualsTab
 bulletSubFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
-bulletSubFrame.Size = UDim2.new(1, -10, 0, 95)
+bulletSubFrame.Size = UDim2.new(1, -10, 0, 85)
 bulletSubFrame.Visible = false
 
 local subCorner = Instance.new("UICorner")
@@ -266,7 +263,7 @@ subCorner.Parent = bulletSubFrame
 local subLayout = Instance.new("UIListLayout")
 subLayout.Parent = bulletSubFrame
 subLayout.SortOrder = Enum.SortOrder.LayoutOrder
-subLayout.Padding = UDim.new(0, 5)
+subLayout.Padding = UDim.new(0, 4)
 
 addToggle(VisualsTab, "Tracer Bullets", function(state)
     Settings.Visuals.BulletTracers = state
@@ -276,9 +273,9 @@ end)
 local modeBtn = Instance.new("TextButton")
 modeBtn.Parent = bulletSubFrame
 modeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-modeBtn.Size = UDim2.new(1, 0, 0, 28)
+modeBtn.Size = UDim2.new(1, 0, 0, 26)
 modeBtn.Font = Enum.Font.Gotham
-modeBtn.Text = " Режим: Простой (Simple)"
+modeBtn.Text = " Режим: Простой"
 modeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 modeBtn.TextSize = 11
 modeBtn.TextXAlignment = Enum.TextXAlignment.Left
@@ -286,19 +283,17 @@ modeBtn.TextXAlignment = Enum.TextXAlignment.Left
 modeBtn.MouseButton1Click:Connect(function()
     if Settings.Visuals.BulletTracerMode == "Simple" then
         Settings.Visuals.BulletTracerMode = "Neon"
-        modeBtn.Text = " Режим: Неоновый (Neon)"
-        modeBtn.TextColor3 = Color3.fromRGB(255, 170, 0)
+        modeBtn.Text = " Режим: Неоновый"
     else
         Settings.Visuals.BulletTracerMode = "Simple"
-        modeBtn.Text = " Режим: Простой (Simple)"
-        modeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        modeBtn.Text = " Режим: Простой"
     end
 end)
 
 local colorBtn = Instance.new("TextButton")
 colorBtn.Parent = bulletSubFrame
 colorBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-colorBtn.Size = UDim2.new(1, 0, 0, 28)
+colorBtn.Size = UDim2.new(1, 0, 0, 26)
 colorBtn.Font = Enum.Font.Gotham
 colorBtn.Text = " Цвет: Оранжевый"
 colorBtn.TextColor3 = Color3.fromRGB(255, 170, 0)
@@ -312,7 +307,6 @@ local colorsList = {
     {Name = "Голубой", Color = Color3.fromRGB(0, 170, 255)}
 }
 local colorIdx = 1
-
 colorBtn.MouseButton1Click:Connect(function()
     colorIdx = colorIdx % #colorsList + 1
     local selected = colorsList[colorIdx]
@@ -321,7 +315,149 @@ colorBtn.MouseButton1Click:Connect(function()
     colorBtn.TextColor3 = selected.Color
 end)
 
--- ЛОГИКА ОТРИСОВКИ С УЧЕТОМ РОЛЕЙ
+
+-- ==================== ВКЛАДКА 2: MISC ====================
+local MiscTab = createTab("MISC")
+
+-- 1. Anti-Fling
+addToggle(MiscTab, "Anti-Fling", function(state)
+    Settings.Misc.AntiFling = state
+end)
+
+-- 2. Target Fling + подвкладка выбора игрока
+local flingSubFrame = Instance.new("Frame")
+flingSubFrame.Parent = MiscTab
+flingSubFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+flingSubFrame.Size = UDim2.new(1, -10, 0, 65)
+flingSubFrame.Visible = false
+
+local flingSubCorner = Instance.new("UICorner")
+flingSubCorner.CornerRadius = UDim.new(0, 6)
+flingSubCorner.Parent = flingSubFrame
+
+local flingSubLayout = Instance.new("UIListLayout")
+flingSubLayout.Parent = flingSubFrame
+flingSubLayout.SortOrder = Enum.SortOrder.LayoutOrder
+flingSubLayout.Padding = UDim.new(0, 4)
+
+addToggle(MiscTab, "Target Fling (Вниз)", function(state)
+    Settings.Misc.TargetFlingEnabled = state
+    flingSubFrame.Visible = state
+end)
+
+local targetSelectBtn = Instance.new("TextButton")
+targetSelectBtn.Parent = flingSubFrame
+targetSelectBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+targetSelectBtn.Size = UDim2.new(1, 0, 0, 28)
+targetSelectBtn.Font = Enum.Font.Gotham
+targetSelectBtn.Text = " Цель: Выбрать игрока"
+targetSelectBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+targetSelectBtn.TextSize = 11
+targetSelectBtn.TextXAlignment = Enum.TextXAlignment.Left
+
+local otherPlayers = {}
+local targetIdx = 1
+targetSelectBtn.MouseButton1Click:Connect(function()
+    otherPlayers = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(otherPlayers, p) end
+    end
+    if #otherPlayers > 0 then
+        targetIdx = targetIdx % #otherPlayers + 1
+        Settings.Misc.SelectedTarget = otherPlayers[targetIdx]
+        targetSelectBtn.Text = " Цель: " .. Settings.Misc.SelectedTarget.Name
+    else
+        targetSelectBtn.Text = " Цель: Нет игроков"
+    end
+end)
+
+-- 3. Fly + Поднастройка скорости
+local flySubFrame = Instance.new("Frame")
+flySubFrame.Parent = MiscTab
+flySubFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+flySubFrame.Size = UDim2.new(1, -10, 0, 65)
+flySubFrame.Visible = false
+
+local flySubCorner = Instance.new("UICorner")
+flySubCorner.CornerRadius = UDim.new(0, 6)
+flySubCorner.Parent = flySubFrame
+
+local flySubLayout = Instance.new("UIListLayout")
+flySubLayout.Parent = flySubFrame
+flySubLayout.SortOrder = Enum.SortOrder.LayoutOrder
+flySubLayout.Padding = UDim.new(0, 4)
+
+addToggle(MiscTab, "Fly (Полёт)", function(state)
+    Settings.Misc.Fly = state
+    flySubFrame.Visible = state
+end)
+
+local flySpeedBtn = Instance.new("TextButton")
+flySpeedBtn.Parent = flySubFrame
+flySpeedBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+flySpeedBtn.Size = UDim2.new(1, 0, 0, 28)
+flySpeedBtn.Font = Enum.Font.Gotham
+flySpeedBtn.Text = " Скорость флая: 50"
+flySpeedBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+flySpeedBtn.TextSize = 11
+flySpeedBtn.TextXAlignment = Enum.TextXAlignment.Left
+
+local speeds = {30, 50, 80, 120, 200}
+local speedIdx = 2
+flySpeedBtn.MouseButton1Click:Connect(function()
+    speedIdx = speedIdx % #speeds + 1
+    Settings.Misc.FlySpeed = speeds[speedIdx]
+    flySpeedBtn.Text = " Скорость флая: " .. Settings.Misc.FlySpeed
+end)
+
+-- 4. Noclip
+addToggle(MiscTab, "Noclip", function(state)
+    Settings.Misc.Noclip = state
+end)
+
+-- 5. SpinBot + Поднастройка скорости
+local spinSubFrame = Instance.new("Frame")
+spinSubFrame.Parent = MiscTab
+spinSubFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+spinSubFrame.Size = UDim2.new(1, -10, 0, 65)
+spinSubFrame.Visible = false
+
+local spinSubCorner = Instance.new("UICorner")
+spinSubCorner.CornerRadius = UDim.new(0, 6)
+spinSubCorner.Parent = spinSubFrame
+
+local spinSubLayout = Instance.new("UIListLayout")
+spinSubLayout.Parent = spinSubFrame
+spinSubLayout.SortOrder = Enum.SortOrder.LayoutOrder
+spinSubLayout.Padding = UDim.new(0, 4)
+
+addToggle(MiscTab, "SpinBot (Крутилка)", function(state)
+    Settings.Misc.Spin = state
+    spinSubFrame.Visible = state
+end)
+
+local spinSpeedBtn = Instance.new("TextButton")
+spinSpeedBtn.Parent = spinSubFrame
+spinSpeedBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+spinSpeedBtn.Size = UDim2.new(1, 0, 0, 28)
+spinSpeedBtn.Font = Enum.Font.Gotham
+spinSpeedBtn.Text = " Скорость спина: 50"
+spinSpeedBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+spinSpeedBtn.TextSize = 11
+spinSpeedBtn.TextXAlignment = Enum.TextXAlignment.Left
+
+local spinSpeeds = {20, 50, 100, 200, 500}
+local spinSpeedIdx = 2
+spinSpeedBtn.MouseButton1Click:Connect(function()
+    spinSpeedIdx = spinSpeedIdx % #spinSpeeds + 1
+    Settings.Misc.SpinSpeed = spinSpeeds[spinSpeedIdx]
+    spinSpeedBtn.Text = " Скорость спина: " .. Settings.Misc.SpinSpeed
+end)
+
+
+-- ==================== ФОНОВАЯ ЛОГИКА И ВИЗУАЛЫ ====================
+
+-- Рендер ESP по ролям
 local function setupPlayerESP(player)
     if player == LocalPlayer then return end
 
@@ -353,23 +489,18 @@ local function setupPlayerESP(player)
             return
         end
 
-        -- Получаем роль и цвет
         local role, roleColor = getPlayerRole(player)
-        
-        -- Применяем цвета к визуальным элементам
         highlight.FillColor = roleColor
         highlight.OutlineColor = roleColor
         box.Color = roleColor
         tracer.Color = roleColor
 
-        -- Обновление Highlight
         highlight.Adornee = char
         highlight.Enabled = Settings.Visuals.Highlight
 
         local vector, onScreen = Camera:WorldToViewportPoint(root.Position)
 
         if onScreen then
-            -- Boxes
             if Settings.Visuals.Boxes then
                 box.Size = Vector2.new(2000 / vector.Z, 3000 / vector.Z)
                 box.Position = Vector2.new(vector.X - box.Size.X / 2, vector.Y - box.Size.Y / 2)
@@ -378,7 +509,6 @@ local function setupPlayerESP(player)
                 box.Visible = false
             end
 
-            -- Tracers
             if Settings.Visuals.Tracers then
                 tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                 tracer.To = Vector2.new(vector.X, vector.Y)
@@ -402,12 +532,10 @@ local function setupPlayerESP(player)
     end)
 end
 
-for _, p in ipairs(Players:GetPlayers()) do
-    setupPlayerESP(p)
-end
+for _, p in ipairs(Players:GetPlayers()) do setupPlayerESP(p) end
 Players.PlayerAdded:Connect(setupPlayerESP)
 
--- Логика Tracer Bullets
+-- Пулевые трессеры
 RunService.RenderStepped:Connect(function()
     if Settings.Visuals.BulletTracers then
         local tracerBeam = Drawing.new("Line")
@@ -417,10 +545,75 @@ RunService.RenderStepped:Connect(function()
         tracerBeam.Color = Settings.Visuals.BulletTracerColor
         tracerBeam.Thickness = (Settings.Visuals.BulletTracerMode == "Neon") and 3 or 1
 
-        task.delay(0.05, function()
-            tracerBeam:Remove()
-        end)
+        task.delay(0.05, function() tracerBeam:Remove() end)
     end
 end)
 
-print("Project Sky (MM2 Roles) успешно загружен!")
+-- РАБОТА ФУНКЦИЙ MISC (Anti-Fling, Target Fling ВНИЗ, Fly, Noclip, Spin)
+RunService.Stepped:Connect(function()
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChild("Humanoid")
+
+    -- 1. Anti-Fling (отключение коллизий и сброс скоростей раскидки)
+    if Settings.Misc.AntiFling and char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+            end
+        end
+    end
+
+    -- 2. Target Fling (Раскидка выбранного игрока ВНИЗ под карту)
+    if Settings.Misc.TargetFlingEnabled and Settings.Misc.SelectedTarget and root then
+        local targetChar = Settings.Misc.SelectedTarget.Character
+        local targetRoot = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+        if targetRoot then
+            local oldPos = root.CFrame
+            -- Телепортируемся прямо под цель и толкаем сильно вниз по оси Y
+            root.CFrame = targetRoot.CFrame - Vector3.new(0, 5, 0)
+            root.Velocity = Vector3.new(0, -9999, 0)
+            task.wait(0.02)
+            root.CFrame = oldPos
+        end
+    end
+
+    -- 3. Noclip
+    if Settings.Misc.Noclip and char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+
+    -- 4. SpinBot
+    if Settings.Misc.Spin and root then
+        root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(Settings.Misc.SpinSpeed), 0)
+    end
+end)
+
+-- 5. Fly (Полёт)
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChild("Humanoid")
+
+    if Settings.Misc.Fly and root and hum then
+        hum.PlatformStand = true
+        local moveDir = hum.MoveDirection
+        local camVector = Camera.CFrame.LookVector
+        local velocity = Vector3.new(0, 0, 0)
+
+        if moveDir.Magnitude > 0 then
+            velocity = (Camera.CFrame.LookVector * moveDir.Z + Camera.CFrame.RightVector * moveDir.X) * Settings.Misc.FlySpeed
+        else
+            velocity = Vector3.new(0, 0, 0)
+        end
+        root.Velocity = velocity
+    elseif hum then
+        hum.PlatformStand = false
+    end
+end)
+
+print("Project Sky (MM2) с вкладкой Misc успешно загружен!")
