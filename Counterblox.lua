@@ -1,6 +1,6 @@
 --[[
-    Project Sky - Murder Mystery 2
-    Modular UI & Advanced Visuals Base
+    Project Sky - Murder Mystery 2 (Role-Based ESP)
+    Roles: Murderer (Red), Sheriff (Blue), Innocent (Green), Lobby (Gray)
 ]]--
 
 if _G.ProjectSkyMM2Loaded then
@@ -23,11 +23,61 @@ local Settings = {
         Boxes = false,
         Tracers = false,
         BulletTracers = false,
-        BulletTracerMode = "Simple", -- "Simple" или "Neon"
-        BulletTracerColor = Color3.fromRGB(0, 170, 255),
-        TeamCheck = false -- В MM2 команды как таковые другие, но оставим параметр для совместимости
+        BulletTracerMode = "Simple",
+        BulletTracerColor = Color3.fromRGB(255, 170, 0)
     }
 }
+
+-- Цвета ролей
+local Colors = {
+    Lobby = Color3.fromRGB(150, 150, 150),     -- Серый
+    Innocent = Color3.fromRGB(0, 255, 127),     -- Зеленый
+    Sheriff = Color3.fromRGB(0, 150, 255),      -- Синий
+    Murderer = Color3.fromRGB(255, 50, 50)      -- Красный
+}
+
+-- Функция определения роли игрока
+local function getPlayerRole(player)
+    local char = player.Character
+    local backpack = player:FindFirstChildOfClass("Backpack")
+    
+    -- Проверяем наличие ножа или пистолета в рюкзаке или на персонаже
+    local hasKnife = false
+    local hasGun = false
+    
+    if char then
+        for _, item in ipairs(char:GetChildren()) do
+            if item:IsA("Tool") then
+                local name = item.Name:lower()
+                if name:find("knife") or name:find("нож") then hasKnife = true end
+                if name:find("gun") or name:find("revolver") or name:find("пистолет") then hasGun = true end
+            end
+        end
+    end
+    
+    if backpack then
+        for _, item in ipairs(backpack:GetChildren()) do
+            if item:IsA("Tool") then
+                local name = item.Name:lower()
+                if name:find("knife") or name:find("нож") then hasKnife = true end
+                if name:find("gun") or name:find("revolver") or name:find("пистолет") then hasGun = true end
+            end
+        end
+    end
+    
+    -- Если раунд еще не начался (все в лобби/нет инструментов)
+    if not hasKnife and not hasGun and (not char or not char:FindFirstChild("HumanoidRootPart")) then
+        return "Lobby", Colors.Lobby
+    end
+    
+    if hasKnife then
+        return "Murderer", Colors.Murderer
+    elseif hasGun then
+        return "Sheriff", Colors.Sheriff
+    else
+        return "Innocent", Colors.Innocent
+    end
+end
 
 -- Создание главного UI
 local ScreenGui = Instance.new("ScreenGui")
@@ -64,7 +114,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.Size = UDim2.new(1, -15, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Project Sky | Murder Mystery 2"
+Title.Text = "Project Sky | MM2 Roles ESP"
 Title.TextColor3 = Color3.fromRGB(255, 170, 0)
 Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -114,7 +164,6 @@ ContentContainer.BackgroundTransparency = 1
 ContentContainer.Position = UDim2.new(0, 140, 0, 45)
 ContentContainer.Size = UDim2.new(1, -150, 1, -55)
 
--- Функция создания вкладки
 local Tabs = {}
 local function createTab(name)
     local tabButton = Instance.new("TextButton")
@@ -165,7 +214,6 @@ local function createTab(name)
     return tabContent
 end
 
--- Функция создания чекбокса
 local function addToggle(parent, text, callback)
     local toggleBtn = Instance.new("TextButton")
     toggleBtn.Parent = parent
@@ -193,22 +241,18 @@ end
 -- Создаем вкладку VISUALS
 local VisualsTab = createTab("VISUALS")
 
--- 1. Highlight (Подсветка)
 addToggle(VisualsTab, "Highlight ESP", function(state)
     Settings.Visuals.Highlight = state
 end)
 
--- 2. Boxes (2D Боксы)
 addToggle(VisualsTab, "Boxes ESP", function(state)
     Settings.Visuals.Boxes = state
 end)
 
--- 3. Tracers (Линии до игроков)
 addToggle(VisualsTab, "Tracers", function(state)
     Settings.Visuals.Tracers = state
 end)
 
--- 4. Tracer Bullets + подвкладка (настройки цвета и режима)
 local bulletSubFrame = Instance.new("Frame")
 bulletSubFrame.Parent = VisualsTab
 bulletSubFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
@@ -224,13 +268,11 @@ subLayout.Parent = bulletSubFrame
 subLayout.SortOrder = Enum.SortOrder.LayoutOrder
 subLayout.Padding = UDim.new(0, 5)
 
--- Кнопка включения Tracer Bullets
 addToggle(VisualsTab, "Tracer Bullets", function(state)
     Settings.Visuals.BulletTracers = state
     bulletSubFrame.Visible = state
 end)
 
--- Подвкладка: выбор режима (Simple / Neon)
 local modeBtn = Instance.new("TextButton")
 modeBtn.Parent = bulletSubFrame
 modeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
@@ -253,7 +295,6 @@ modeBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Подвкладка: смена цвета линий выстрела
 local colorBtn = Instance.new("TextButton")
 colorBtn.Parent = bulletSubFrame
 colorBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
@@ -280,31 +321,23 @@ colorBtn.MouseButton1Click:Connect(function()
     colorBtn.TextColor3 = selected.Color
 end)
 
-
--- ЛОГИКА ОТРИСОВКИ И ОБНОВЛЕНИЯ (ESP, Boxes, Tracers)
+-- ЛОГИКА ОТРИСОВКИ С УЧЕТОМ РОЛЕЙ
 local function setupPlayerESP(player)
     if player == LocalPlayer then return end
 
-    -- 1. Highlight
     local highlight = Instance.new("Highlight")
     highlight.Parent = CoreGui
     highlight.Adornee = nil
-    highlight.FillColor = Color3.fromRGB(255, 170, 0)
-    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
     highlight.FillTransparency = 0.5
     highlight.Enabled = false
 
-    -- 2. 2D Box
     local box = Drawing.new("Square")
     box.Visible = false
-    box.Color = Color3.fromRGB(255, 170, 0)
     box.Thickness = 1
     box.Filled = false
 
-    -- 3. Tracer
     local tracer = Drawing.new("Line")
     tracer.Visible = false
-    tracer.Color = Color3.fromRGB(255, 170, 0)
     tracer.Thickness = 1
 
     local connection
@@ -320,11 +353,19 @@ local function setupPlayerESP(player)
             return
         end
 
+        -- Получаем роль и цвет
+        local role, roleColor = getPlayerRole(player)
+        
+        -- Применяем цвета к визуальным элементам
+        highlight.FillColor = roleColor
+        highlight.OutlineColor = roleColor
+        box.Color = roleColor
+        tracer.Color = roleColor
+
         -- Обновление Highlight
         highlight.Adornee = char
         highlight.Enabled = Settings.Visuals.Highlight
 
-        -- Проекция на экран
         local vector, onScreen = Camera:WorldToViewportPoint(root.Position)
 
         if onScreen then
@@ -382,4 +423,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-print("Project Sky (MM2) успешно загружен!")
+print("Project Sky (MM2 Roles) успешно загружен!")
