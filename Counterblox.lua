@@ -1,5 +1,5 @@
 --[[
-    Project Sky - Murder Mystery 2 (Full Script: Roles ESP + Fixed Misc)
+    Project Sky - Murder Mystery 2 (Pulse Hub Style UI + Fixed Misc)
 ]]--
 
 if _G.ProjectSkyMM2Loaded then
@@ -25,7 +25,7 @@ local Settings = {
         Tracers = false,
         BulletTracers = false,
         BulletTracerMode = "Simple",
-        BulletTracerColor = Color3.fromRGB(255, 170, 0)
+        BulletTracerColor = Color3.fromRGB(140, 70, 255)
     },
     Misc = {
         AntiFling = false,
@@ -40,10 +40,10 @@ local Settings = {
 
 -- Цвета ролей MM2
 local Colors = {
-    Lobby = Color3.fromRGB(150, 150, 150),
-    Innocent = Color3.fromRGB(0, 255, 127),
-    Sheriff = Color3.fromRGB(0, 150, 255),
-    Murderer = Color3.fromRGB(255, 50, 50)
+    Lobby = Color3.fromRGB(140, 140, 140),
+    Innocent = Color3.fromRGB(50, 255, 150),
+    Sheriff = Color3.fromRGB(50, 150, 255),
+    Murderer = Color3.fromRGB(255, 60, 60)
 }
 
 local function getPlayerRole(player)
@@ -78,41 +78,43 @@ local function getPlayerRole(player)
     end
 end
 
--- ==================== СОЗДАНИЕ UI ====================
+-- ==================== PULSE HUB UI STYLE ====================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ProjectSkyMM2"
+ScreenGui.Name = "PulseHubStyle"
 ScreenGui.Parent = CoreGui
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+MainFrame.BackgroundColor3 = Color3.fromRGB(14, 14, 18) -- Глубокий темный фон Pulse Hub
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -225, 0.5, -160)
-MainFrame.Size = UDim2.new(0, 450, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -230, 0.5, -165)
+MainFrame.Size = UDim2.new(0, 460, 0, 330)
 
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
 local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Color = Color3.fromRGB(40, 40, 55)
+MainStroke.Color = Color3.fromRGB(60, 30, 95) -- Неоново-фиолетовая граница
 MainStroke.Thickness = 1.5
 
--- Перетаскивание UI
+-- Верхняя панель (Шапка)
 local TopBar = Instance.new("Frame", MainFrame)
 TopBar.Name = "TopBar"
 TopBar.BackgroundTransparency = 1
-TopBar.Size = UDim2.new(1, 0, 0, 35)
+TopBar.Size = UDim2.new(1, 0, 0, 40)
 
 local Title = Instance.new("TextLabel", TopBar)
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.Size = UDim2.new(1, -15, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Project Sky | MM2 Advanced"
-Title.TextColor3 = Color3.fromRGB(255, 170, 0)
-Title.TextSize = 14
+Title.Text = "PULSE HUB <font color='#8c46ff'>| MM2 Advanced</font>"
+Title.RichText = true
+Title.TextColor3 = Color3.fromRGB(240, 240, 245)
+Title.TextSize = 15
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
+-- Перетаскивание UI
 local dragging, dragStart, startPos
 TopBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -133,31 +135,31 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Левая панель вкладок
+-- Боковая панель вкладок (Pulse Sidebar)
 local TabContainer = Instance.new("ScrollingFrame", MainFrame)
 TabContainer.BackgroundTransparency = 1
-TabContainer.Position = UDim2.new(0, 10, 0, 45)
-TabContainer.Size = UDim2.new(0, 120, 1, -55)
+TabContainer.Position = UDim2.new(0, 10, 0, 50)
+TabContainer.Size = UDim2.new(0, 125, 1, -60)
 TabContainer.ScrollBarThickness = 0
 
 local TabListLayout = Instance.new("UIListLayout", TabContainer)
 TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-TabListLayout.Padding = UDim.new(0, 5)
+TabListLayout.Padding = UDim.new(0, 6)
 
--- Правая панель контента
+-- Область контента
 local ContentContainer = Instance.new("Frame", MainFrame)
 ContentContainer.BackgroundTransparency = 1
-ContentContainer.Position = UDim2.new(0, 140, 0, 45)
-ContentContainer.Size = UDim2.new(1, -150, 1, -55)
+ContentContainer.Position = UDim2.new(0, 145, 0, 50)
+ContentContainer.Size = UDim2.new(1, -155, 1, -60)
 
 local Tabs = {}
 local function createTab(name)
     local tabBtn = Instance.new("TextButton", TabContainer)
-    tabBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
-    tabBtn.Size = UDim2.new(1, 0, 0, 32)
+    tabBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+    tabBtn.Size = UDim2.new(1, 0, 0, 35)
     tabBtn.Font = Enum.Font.GothamSemibold
     tabBtn.Text = name
-    tabBtn.TextColor3 = Color3.fromRGB(170, 170, 180)
+    tabBtn.TextColor3 = Color3.fromRGB(150, 150, 165)
     tabBtn.TextSize = 13
     Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 6)
 
@@ -174,18 +176,18 @@ local function createTab(name)
     tabBtn.MouseButton1Click:Connect(function()
         for _, t in pairs(Tabs) do
             t.Content.Visible = false
-            t.Button.TextColor3 = Color3.fromRGB(170, 170, 180)
-            t.Button.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+            t.Button.TextColor3 = Color3.fromRGB(150, 150, 165)
+            t.Button.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
         end
         tabContent.Visible = true
         tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        tabBtn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+        tabBtn.BackgroundColor3 = Color3.fromRGB(110, 40, 210) -- Фиолетовый активный цвет Pulse Hub
     end)
 
     if #Tabs == 0 then
         tabContent.Visible = true
         tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        tabBtn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+        tabBtn.BackgroundColor3 = Color3.fromRGB(110, 40, 210)
     end
 
     table.insert(Tabs, {Button = tabBtn, Content = tabContent})
@@ -194,11 +196,11 @@ end
 
 local function addToggle(parent, text, callback)
     local btn = Instance.new("TextButton", parent)
-    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    btn.BackgroundColor3 = Color3.fromRGB(22, 22, 29)
     btn.Size = UDim2.new(1, -10, 0, 34)
     btn.Font = Enum.Font.Gotham
     btn.Text = "  " .. text .. ": OFF"
-    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+    btn.TextColor3 = Color3.fromRGB(180, 180, 195)
     btn.TextSize = 12
     btn.TextXAlignment = Enum.TextXAlignment.Left
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
@@ -207,7 +209,7 @@ local function addToggle(parent, text, callback)
     btn.MouseButton1Click:Connect(function()
         state = not state
         btn.Text = "  " .. text .. (state and ": ON" or ": OFF")
-        btn.TextColor3 = state and Color3.fromRGB(0, 255, 127) or Color3.fromRGB(220, 220, 220)
+        btn.TextColor3 = state and Color3.fromRGB(160, 90, 255) or Color3.fromRGB(180, 180, 195)
         callback(state)
     end)
     return btn
@@ -215,8 +217,8 @@ end
 
 local function addButton(parent, text, callback)
     local btn = Instance.new("TextButton", parent)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    btn.Size = UDim2.new(1, -10, 0, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(45, 25, 80)
+    btn.Size = UDim2.new(1, -10, 0, 32)
     btn.Font = Enum.Font.GothamBold
     btn.Text = text
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -234,8 +236,8 @@ addToggle(VisualsTab, "Boxes ESP", function(s) Settings.Visuals.Boxes = s end)
 addToggle(VisualsTab, "Tracers", function(s) Settings.Visuals.Tracers = s end)
 
 local bulletSubFrame = Instance.new("Frame", VisualsTab)
-bulletSubFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
-bulletSubFrame.Size = UDim2.new(1, -10, 0, 60)
+bulletSubFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+bulletSubFrame.Size = UDim2.new(1, -10, 0, 65)
 bulletSubFrame.Visible = false
 Instance.new("UICorner", bulletSubFrame).CornerRadius = UDim.new(0, 6)
 local subLayout = Instance.new("UIListLayout", bulletSubFrame)
@@ -247,11 +249,11 @@ addToggle(VisualsTab, "Tracer Bullets", function(s)
 end)
 
 local modeBtn = Instance.new("TextButton", bulletSubFrame)
-modeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-modeBtn.Size = UDim2.new(1, 0, 0, 26)
+modeBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
+modeBtn.Size = UDim2.new(1, 0, 0, 28)
 modeBtn.Font = Enum.Font.Gotham
 modeBtn.Text = " Режим: Простой"
-modeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+modeBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
 modeBtn.TextSize = 11
 modeBtn.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -266,19 +268,19 @@ modeBtn.MouseButton1Click:Connect(function()
 end)
 
 local colorBtn = Instance.new("TextButton", bulletSubFrame)
-colorBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-colorBtn.Size = UDim2.new(1, 0, 0, 26)
+colorBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
+colorBtn.Size = UDim2.new(1, 0, 0, 28)
 colorBtn.Font = Enum.Font.Gotham
-colorBtn.Text = " Цвет: Оранжевый"
-colorBtn.TextColor3 = Color3.fromRGB(255, 170, 0)
+colorBtn.Text = " Цвет: Фиолетовый"
+colorBtn.TextColor3 = Color3.fromRGB(140, 70, 255)
 colorBtn.TextSize = 11
 colorBtn.TextXAlignment = Enum.TextXAlignment.Left
 
 local colorsList = {
-    {Name = "Оранжевый", Color = Color3.fromRGB(255, 170, 0)},
+    {Name = "Фиолетовый", Color = Color3.fromRGB(140, 70, 255)},
+    {Name = "Неоновый синий", Color = Color3.fromRGB(0, 170, 255)},
     {Name = "Красный", Color = Color3.fromRGB(255, 50, 50)},
-    {Name = "Зеленый", Color = Color3.fromRGB(50, 255, 50)},
-    {Name = "Голубой", Color = Color3.fromRGB(0, 170, 255)}
+    {Name = "Зеленый", Color = Color3.fromRGB(50, 255, 100)}
 }
 local colorIdx = 1
 colorBtn.MouseButton1Click:Connect(function()
@@ -297,20 +299,20 @@ addToggle(MiscTab, "Anti-Fling", function(s)
     Settings.Misc.AntiFling = s
 end)
 
--- 2. Target Fling (Выбор цели + Отдельный запуск)
+-- 2. Target Fling (Выбор цели + Отдельный запуск вниз)
 local flingSubFrame = Instance.new("Frame", MiscTab)
-flingSubFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
-flingSubFrame.Size = UDim2.new(1, -10, 0, 68)
+flingSubFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+flingSubFrame.Size = UDim2.new(1, -10, 0, 72)
 Instance.new("UICorner", flingSubFrame).CornerRadius = UDim.new(0, 6)
 local flingLayout = Instance.new("UIListLayout", flingSubFrame)
 flingLayout.Padding = UDim.new(0, 4)
 
 local targetSelectBtn = Instance.new("TextButton", flingSubFrame)
-targetSelectBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-targetSelectBtn.Size = UDim2.new(1, 0, 0, 28)
+targetSelectBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
+targetSelectBtn.Size = UDim2.new(1, 0, 0, 30)
 targetSelectBtn.Font = Enum.Font.Gotham
 targetSelectBtn.Text = " Цель: Выбрать игрока"
-targetSelectBtn.TextColor3 = Color3.fromRGB(255, 170, 0)
+targetSelectBtn.TextColor3 = Color3.fromRGB(180, 130, 255)
 targetSelectBtn.TextSize = 11
 targetSelectBtn.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -369,17 +371,17 @@ addButton(flingSubFrame, "🚀 Запустить Fling (Вниз)", executeFlin
 
 -- 3. Fly (Полёт)
 local flySubFrame = Instance.new("Frame", MiscTab)
-flySubFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+flySubFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 flySubFrame.Size = UDim2.new(1, -10, 0, 32)
 flySubFrame.Visible = false
 Instance.new("UICorner", flySubFrame).CornerRadius = UDim.new(0, 6)
 
 local flySpeedBtn = Instance.new("TextButton", flySubFrame)
-flySpeedBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+flySpeedBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
 flySpeedBtn.Size = UDim2.new(1, 0, 1, 0)
 flySpeedBtn.Font = Enum.Font.Gotham
 flySpeedBtn.Text = " Скорость флая: 50"
-flySpeedBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+flySpeedBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
 flySpeedBtn.TextSize = 11
 flySpeedBtn.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -458,17 +460,17 @@ addToggle(MiscTab, "Noclip", function(s) Settings.Misc.Noclip = s end)
 
 -- 5. SpinBot
 local spinSubFrame = Instance.new("Frame", MiscTab)
-spinSubFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+spinSubFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 spinSubFrame.Size = UDim2.new(1, -10, 0, 32)
 spinSubFrame.Visible = false
 Instance.new("UICorner", spinSubFrame).CornerRadius = UDim.new(0, 6)
 
 local spinSpeedBtn = Instance.new("TextButton", spinSubFrame)
-spinSpeedBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+spinSpeedBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
 spinSpeedBtn.Size = UDim2.new(1, 0, 1, 0)
 spinSpeedBtn.Font = Enum.Font.Gotham
 spinSpeedBtn.Text = " Скорость спина: 50"
-spinSpeedBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+spinSpeedBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
 spinSpeedBtn.TextSize = 11
 spinSpeedBtn.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -583,7 +585,6 @@ RunService.Stepped:Connect(function()
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
 
-    -- Anti-Fling (безопасное отключение столкновения с чужими игроками)
     if Settings.Misc.AntiFling then
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character then
@@ -596,7 +597,6 @@ RunService.Stepped:Connect(function()
         end
     end
 
-    -- Noclip
     if Settings.Misc.Noclip and char then
         for _, part in ipairs(char:GetDescendants()) do
             if part:IsA("BasePart") then
@@ -605,10 +605,9 @@ RunService.Stepped:Connect(function()
         end
     end
 
-    -- SpinBot
     if Settings.Misc.Spin and root then
         root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(Settings.Misc.SpinSpeed), 0)
     end
 end)
 
-print("Project Sky (MM2) — основной код успешно загружен!")
+print("Pulse Hub (MM2) стиль успешно запущен!")
