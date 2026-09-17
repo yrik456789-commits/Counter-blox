@@ -1,13 +1,13 @@
 --[[
-    Project Sky - Counter Blox
+    Project Sky - Murder Mystery 2
     Modular UI & Advanced Visuals Base
 ]]--
 
-if _G.ProjectSkyLoaded then
-    warn("Project Sky уже запущен!")
+if _G.ProjectSkyMM2Loaded then
+    warn("Project Sky (MM2) уже запущен!")
     return
 end
-_G.ProjectSkyLoaded = true
+_G.ProjectSkyMM2Loaded = true
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -25,13 +25,13 @@ local Settings = {
         BulletTracers = false,
         BulletTracerMode = "Simple", -- "Simple" или "Neon"
         BulletTracerColor = Color3.fromRGB(0, 170, 255),
-        TeamCheck = true
+        TeamCheck = false -- В MM2 команды как таковые другие, но оставим параметр для совместимости
     }
 }
 
 -- Создание главного UI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ProjectSkyMain"
+ScreenGui.Name = "ProjectSkyMM2"
 ScreenGui.Parent = CoreGui
 
 local MainFrame = Instance.new("Frame")
@@ -64,8 +64,8 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.Size = UDim2.new(1, -15, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Project Sky | Counter Blox"
-Title.TextColor3 = Color3.fromRGB(0, 170, 255)
+Title.Text = "Project Sky | Murder Mystery 2"
+Title.TextColor3 = Color3.fromRGB(255, 170, 0)
 Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -116,8 +116,6 @@ ContentContainer.Size = UDim2.new(1, -150, 1, -55)
 
 -- Функция создания вкладки
 local Tabs = {}
-local CurrentTab = nil
-
 local function createTab(name)
     local tabButton = Instance.new("TextButton")
     tabButton.Parent = TabContainer
@@ -154,20 +152,20 @@ local function createTab(name)
         end
         tabContent.Visible = true
         tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        tabButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+        tabButton.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
     end)
 
     if #Tabs == 0 then
         tabContent.Visible = true
         tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        tabButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+        tabButton.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
     end
 
     table.insert(Tabs, {Button = tabButton, Content = tabContent})
     return tabContent
 end
 
--- Функция создания чекбокса (кнопки включения функции)
+-- Функция создания чекбокса
 local function addToggle(parent, text, callback)
     local toggleBtn = Instance.new("TextButton")
     toggleBtn.Parent = parent
@@ -186,7 +184,7 @@ local function addToggle(parent, text, callback)
     local state = false
     toggleBtn.MouseButton1Click:Connect(function()
         state = not state
-        toggleBtn.Text = "  " .. text .. (state and ": ON" : ": OFF")
+        toggleBtn.Text = "  " .. text .. (state and ": ON" or ": OFF")
         toggleBtn.TextColor3 = state and Color3.fromRGB(0, 255, 127) or Color3.fromRGB(220, 220, 220)
         callback(state)
     end)
@@ -200,7 +198,7 @@ addToggle(VisualsTab, "Highlight ESP", function(state)
     Settings.Visuals.Highlight = state
 end)
 
--- 2. Boxes (2D Боксы через Drawing API)
+-- 2. Boxes (2D Боксы)
 addToggle(VisualsTab, "Boxes ESP", function(state)
     Settings.Visuals.Boxes = state
 end)
@@ -226,7 +224,7 @@ subLayout.Parent = bulletSubFrame
 subLayout.SortOrder = Enum.SortOrder.LayoutOrder
 subLayout.Padding = UDim.new(0, 5)
 
--- Кнопка переключения Tracer Bullets
+-- Кнопка включения Tracer Bullets
 addToggle(VisualsTab, "Tracer Bullets", function(state)
     Settings.Visuals.BulletTracers = state
     bulletSubFrame.Visible = state
@@ -247,7 +245,7 @@ modeBtn.MouseButton1Click:Connect(function()
     if Settings.Visuals.BulletTracerMode == "Simple" then
         Settings.Visuals.BulletTracerMode = "Neon"
         modeBtn.Text = " Режим: Неоновый (Neon)"
-        modeBtn.TextColor3 = Color3.fromRGB(0, 170, 255)
+        modeBtn.TextColor3 = Color3.fromRGB(255, 170, 0)
     else
         Settings.Visuals.BulletTracerMode = "Simple"
         modeBtn.Text = " Режим: Простой (Simple)"
@@ -261,16 +259,16 @@ colorBtn.Parent = bulletSubFrame
 colorBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 colorBtn.Size = UDim2.new(1, 0, 0, 28)
 colorBtn.Font = Enum.Font.Gotham
-colorBtn.Text = " Цвет: Голубой"
-colorBtn.TextColor3 = Color3.fromRGB(0, 170, 255)
+colorBtn.Text = " Цвет: Оранжевый"
+colorBtn.TextColor3 = Color3.fromRGB(255, 170, 0)
 colorBtn.TextSize = 11
 colorBtn.TextXAlignment = Enum.TextXAlignment.Left
 
 local colorsList = {
-    {Name = "Голубой", Color = Color3.fromRGB(0, 170, 255)},
+    {Name = "Оранжевый", Color = Color3.fromRGB(255, 170, 0)},
     {Name = "Красный", Color = Color3.fromRGB(255, 50, 50)},
     {Name = "Зеленый", Color = Color3.fromRGB(50, 255, 50)},
-    {Name = "Желтый", Color = Color3.fromRGB(255, 255, 50)}
+    {Name = "Голубой", Color = Color3.fromRGB(0, 170, 255)}
 }
 local colorIdx = 1
 
@@ -284,8 +282,6 @@ end)
 
 
 -- ЛОГИКА ОТРИСОВКИ И ОБНОВЛЕНИЯ (ESP, Boxes, Tracers)
-local espCache = {}
-
 local function setupPlayerESP(player)
     if player == LocalPlayer then return end
 
@@ -293,22 +289,22 @@ local function setupPlayerESP(player)
     local highlight = Instance.new("Highlight")
     highlight.Parent = CoreGui
     highlight.Adornee = nil
-    highlight.FillColor = Color3.fromRGB(0, 170, 255)
+    highlight.FillColor = Color3.fromRGB(255, 170, 0)
     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
     highlight.FillTransparency = 0.5
     highlight.Enabled = false
 
-    -- 2. 2D Box (Drawing API)
+    -- 2. 2D Box
     local box = Drawing.new("Square")
     box.Visible = false
-    box.Color = Color3.fromRGB(0, 170, 255)
+    box.Color = Color3.fromRGB(255, 170, 0)
     box.Thickness = 1
     box.Filled = false
 
-    -- 3. Tracer Line
+    -- 3. Tracer
     local tracer = Drawing.new("Line")
     tracer.Visible = false
-    tracer.Color = Color3.fromRGB(0, 170, 255)
+    tracer.Color = Color3.fromRGB(255, 170, 0)
     tracer.Thickness = 1
 
     local connection
@@ -317,15 +313,7 @@ local function setupPlayerESP(player)
         local hum = char and char:FindFirstChild("Humanoid")
         local root = char and char:FindFirstChild("HumanoidRootPart")
 
-        -- Проверки валидности и TeamCheck
         if not char or not hum or not root or hum.Health <= 0 then
-            highlight.Enabled = false
-            box.Visible = false
-            tracer.Visible = false
-            return
-        end
-
-        if Settings.Visuals.TeamCheck and player.Team == LocalPlayer.Team then
             highlight.Enabled = false
             box.Visible = false
             tracer.Visible = false
@@ -336,11 +324,11 @@ local function setupPlayerESP(player)
         highlight.Adornee = char
         highlight.Enabled = Settings.Visuals.Highlight
 
-        -- Расчет проекции на экран для Boxes и Tracers
+        -- Проекция на экран
         local vector, onScreen = Camera:WorldToViewportPoint(root.Position)
 
         if onScreen then
-            -- 2D Box обновление
+            -- Boxes
             if Settings.Visuals.Boxes then
                 box.Size = Vector2.new(2000 / vector.Z, 3000 / vector.Z)
                 box.Position = Vector2.new(vector.X - box.Size.X / 2, vector.Y - box.Size.Y / 2)
@@ -349,7 +337,7 @@ local function setupPlayerESP(player)
                 box.Visible = false
             end
 
-            -- Tracers обновление (из низа экрана до игрока)
+            -- Tracers
             if Settings.Visuals.Tracers then
                 tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                 tracer.To = Vector2.new(vector.X, vector.Y)
@@ -378,14 +366,13 @@ for _, p in ipairs(Players:GetPlayers()) do
 end
 Players.PlayerAdded:Connect(setupPlayerESP)
 
--- Логика Tracer Bullets (Следы от выстрелов/направления)
+-- Логика Tracer Bullets
 RunService.RenderStepped:Connect(function()
     if Settings.Visuals.BulletTracers then
-        -- Пример визуализации трассера выстрела от центра экрана вперед
         local tracerBeam = Drawing.new("Line")
         tracerBeam.Visible = true
         tracerBeam.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-        tracerBeam.To = Vector2.new(Camera.ViewportSize.X / 2 + math.random(-50, 50), Camera.ViewportSize.Y / 2 + math.random(-50, 50))
+        tracerBeam.To = Vector2.new(Camera.ViewportSize.X / 2 + math.random(-60, 60), Camera.ViewportSize.Y / 2 + math.random(-60, 60))
         tracerBeam.Color = Settings.Visuals.BulletTracerColor
         tracerBeam.Thickness = (Settings.Visuals.BulletTracerMode == "Neon") and 3 or 1
 
@@ -395,4 +382,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-print("Project Sky загружен успешно! Меню готово к использованию.")
+print("Project Sky (MM2) успешно загружен!")
