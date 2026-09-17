@@ -1,5 +1,5 @@
 --[[
-    Project Sky - Murder Mystery 2 (Full Script with Fixed Misc & Visuals)
+    Project Sky - Murder Mystery 2 (Full Script: Roles ESP + Fixed Misc)
 ]]--
 
 if _G.ProjectSkyMM2Loaded then
@@ -97,7 +97,7 @@ local MainStroke = Instance.new("UIStroke", MainFrame)
 MainStroke.Color = Color3.fromRGB(40, 40, 55)
 MainStroke.Thickness = 1.5
 
--- Перетаскивание
+-- Перетаскивание UI
 local TopBar = Instance.new("Frame", MainFrame)
 TopBar.Name = "TopBar"
 TopBar.BackgroundTransparency = 1
@@ -113,7 +113,7 @@ Title.TextColor3 = Color3.fromRGB(255, 170, 0)
 Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local dragging, dragInput, dragStart, startPos
+local dragging, dragStart, startPos
 TopBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
@@ -265,6 +265,30 @@ modeBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+local colorBtn = Instance.new("TextButton", bulletSubFrame)
+colorBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+colorBtn.Size = UDim2.new(1, 0, 0, 26)
+colorBtn.Font = Enum.Font.Gotham
+colorBtn.Text = " Цвет: Оранжевый"
+colorBtn.TextColor3 = Color3.fromRGB(255, 170, 0)
+colorBtn.TextSize = 11
+colorBtn.TextXAlignment = Enum.TextXAlignment.Left
+
+local colorsList = {
+    {Name = "Оранжевый", Color = Color3.fromRGB(255, 170, 0)},
+    {Name = "Красный", Color = Color3.fromRGB(255, 50, 50)},
+    {Name = "Зеленый", Color = Color3.fromRGB(50, 255, 50)},
+    {Name = "Голубой", Color = Color3.fromRGB(0, 170, 255)}
+}
+local colorIdx = 1
+colorBtn.MouseButton1Click:Connect(function()
+    colorIdx = (colorIdx % #colorsList) + 1
+    local selected = colorsList[colorIdx]
+    Settings.Visuals.BulletTracerColor = selected.Color
+    colorBtn.Text = " Цвет: " .. selected.Name
+    colorBtn.TextColor3 = selected.Color
+end)
+
 -- ==================== ВКЛАДКА 2: MISC ====================
 local MiscTab = createTab("MISC")
 
@@ -273,7 +297,7 @@ addToggle(MiscTab, "Anti-Fling", function(s)
     Settings.Misc.AntiFling = s
 end)
 
--- 2. Target Fling (Выбор игрока + Запуск)
+-- 2. Target Fling (Выбор цели + Отдельный запуск)
 local flingSubFrame = Instance.new("Frame", MiscTab)
 flingSubFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
 flingSubFrame.Size = UDim2.new(1, -10, 0, 68)
@@ -314,15 +338,14 @@ local function executeFling()
     
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
-    local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
     
-    if not root or not targetRoot then return end
+    if not root or not target.Character:FindFirstChild("HumanoidRootPart") then return end
 
     if flingConnection then flingConnection:Disconnect() end
 
     local bav = Instance.new("BodyAngularVelocity")
     bav.Name = "FlingForce"
-    bav.AngularVelocity = Vector3.new(0, 999999, 0)
+    bav.AngularVelocity = Vector3.new(999999, 999999, 999999)
     bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
     bav.Parent = root
 
@@ -331,7 +354,7 @@ local function executeFling()
 
     flingConnection = RunService.Heartbeat:Connect(function()
         if target.Character and target.Character:FindFirstChild("HumanoidRootPart") and (tick() - startTime < 1.2) then
-            root.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, -3, 0)
+            root.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, -3.5, 0)
             root.Velocity = Vector3.new(0, -10000, 0)
         else
             if flingConnection then flingConnection:Disconnect() end
@@ -541,12 +564,26 @@ end
 for _, p in ipairs(Players:GetPlayers()) do setupPlayerESP(p) end
 Players.PlayerAdded:Connect(setupPlayerESP)
 
+-- Рендер пулевых трейсеров
+RunService.RenderStepped:Connect(function()
+    if Settings.Visuals.BulletTracers then
+        local tracerBeam = Drawing.new("Line")
+        tracerBeam.Visible = true
+        tracerBeam.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+        tracerBeam.To = Vector2.new(Camera.ViewportSize.X / 2 + math.random(-60, 60), Camera.ViewportSize.Y / 2 + math.random(-60, 60))
+        tracerBeam.Color = Settings.Visuals.BulletTracerColor
+        tracerBeam.Thickness = (Settings.Visuals.BulletTracerMode == "Neon") and 3 or 1
+
+        task.delay(0.05, function() tracerBeam:Remove() end)
+    end
+end)
+
 -- Цикл Anti-Fling, Noclip и SpinBot
 RunService.Stepped:Connect(function()
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
 
-    -- Anti-Fling (отключает столкновения чужих моделей с персонажем)
+    -- Anti-Fling (безопасное отключение столкновения с чужими игроками)
     if Settings.Misc.AntiFling then
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character then
@@ -574,4 +611,4 @@ RunService.Stepped:Connect(function()
     end
 end)
 
-print("Project Sky (MM2) — полный обновленный скрипт загружен!")
+print("Project Sky (MM2) — основной код успешно загружен!")
