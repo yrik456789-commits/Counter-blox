@@ -1,5 +1,5 @@
 --[[
-    Project Sky 1.0 - Murder Mystery 2 (Full Script: Intro + Minimize/Close + Fixed Combat/Misc/Visuals)
+    Project Sky 1.1 - Murder Mystery 2 (Full Script: Intro 1.1 + Minimize/Close + Fixed Combat/Misc/Visuals)
 ]]--
 
 if _G.ProjectSkyMM2Loaded then
@@ -18,7 +18,7 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- ==================== ИНТРО АНИМАЦИЯ ====================
+-- ==================== ИНТРО АНИМАЦИЯ (1.1) ====================
 local IntroGui = Instance.new("ScreenGui")
 IntroGui.Name = "ProjectSkyIntro"
 IntroGui.Parent = CoreGui
@@ -34,7 +34,7 @@ IntroText.AnchorPoint = Vector2.new(0.5, 0.5)
 IntroText.Position = UDim2.new(-0.5, 0, 0.5, 0)
 IntroText.Size = UDim2.new(0, 500, 0, 100)
 IntroText.Font = Enum.Font.GothamBold
-IntroText.Text = "PROJECT SKY <font color='#8c46ff'>1.0</font>"
+IntroText.Text = "PROJECT SKY <font color='#8c46ff'>1.1</font>"
 IntroText.RichText = true
 IntroText.TextColor3 = Color3.fromRGB(255, 255, 255)
 IntroText.TextSize = 36
@@ -113,7 +113,7 @@ local function getPlayerRole(player)
     end
 end
 
--- ==================== ОСНОВНОЙ ГУИ (ПОЯВЛЯЕТСЯ ПОСЛЕ ИНТРО) ====================
+-- ==================== ОСНОВНОЙ ГУИ ====================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ProjectSkyMM2"
 ScreenGui.Parent = CoreGui
@@ -140,7 +140,6 @@ MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
 MainFrame.BorderSizePixel = 0
--- Плавное появление (стартует чуть меньше и прозрачным)
 MainFrame.Position = UDim2.new(0.5, -230, 0.5, -165)
 MainFrame.Size = UDim2.new(0, 460, 0, 330)
 MainFrame.BackgroundTransparency = 1
@@ -173,7 +172,7 @@ Title.TextColor3 = Color3.fromRGB(240, 240, 245)
 Title.TextSize = 15
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Кнопка сворачивания (минимизации)
+-- Кнопка сворачивания
 local MinimizeBtn = Instance.new("TextButton", TopBar)
 MinimizeBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 MinimizeBtn.Position = UDim2.new(1, -65, 0.5, -12)
@@ -184,7 +183,7 @@ MinimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
 MinimizeBtn.TextSize = 14
 Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0, 6)
 
--- Кнопка закрытия (крестик)
+-- Кнопка закрытия
 local CloseBtn = Instance.new("TextButton", TopBar)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(60, 20, 30)
 CloseBtn.Position = UDim2.new(1, -35, 0.5, -12)
@@ -195,7 +194,7 @@ CloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
 CloseBtn.TextSize = 12
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 
--- Кнопка восстановления (появляется внутри свернутого прямоугольника)
+-- Кнопка восстановления
 local RestoreBtn = Instance.new("TextButton", MainFrame)
 RestoreBtn.BackgroundTransparency = 1
 RestoreBtn.Size = UDim2.new(1, 0, 1, 0)
@@ -225,7 +224,6 @@ ContentContainer.BackgroundTransparency = 1
 ContentContainer.Position = UDim2.new(0, 145, 0, 50)
 ContentContainer.Size = UDim2.new(1, -155, 1, -60)
 
--- Логика сворачивания / разворачивания
 MinimizeBtn.MouseButton1Click:Connect(function()
     isMinimized = true
     TabContainer.Visible = false
@@ -260,7 +258,6 @@ RestoreBtn.MouseButton1Click:Connect(function()
     CloseBtn.Visible = true
 end)
 
--- Логика полного закрытия скрипта
 CloseBtn.MouseButton1Click:Connect(function()
     _G.ProjectSkyMM2Loaded = false
     ScreenGui:Destroy()
@@ -435,7 +432,7 @@ addToggle(MiscTab, "Anti-Fling", function(s)
     Settings.Misc.AntiFling = s
 end)
 
--- Target Fling (Реальный флинг)
+-- Target Fling
 local flingSubFrame = Instance.new("Frame", MiscTab)
 flingSubFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 flingSubFrame.Size = UDim2.new(1, -10, 0, 72)
@@ -720,7 +717,7 @@ end
 for _, p in ipairs(Players:GetPlayers()) do setupPlayerESP(p) end
 Players.PlayerAdded:Connect(setupPlayerESP)
 
--- Трейсеры пуль (только при выстреле из пистолета)
+-- Трейсеры пуль
 local function monitorToolForTracers(tool)
     if tool:IsA("Tool") and (tool.Name:lower():find("gun") or tool.Name:lower():find("revolver") or tool.Name:lower():find("пистолет")) then
         tool.Activated:Connect(function()
@@ -815,4 +812,4 @@ RunService.Stepped:Connect(function()
     end
 end)
 
-print("Project Sky 1.0 успешно загружен!")
+print("Project Sky 1.1 успешно загружен!")
