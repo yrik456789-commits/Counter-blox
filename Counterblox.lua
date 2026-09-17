@@ -1,532 +1,398 @@
--- // Сервисы
+--[[
+    Project Sky - Counter Blox
+    Modular UI & Advanced Visuals Base
+]]--
+
+if _G.ProjectSkyLoaded then
+    warn("Project Sky уже запущен!")
+    return
+end
+_G.ProjectSkyLoaded = true
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- // Удаляем старое меню, если оно было запущено
-if CoreGui:FindFirstChild("ProjectSky_Menu") then
-    CoreGui.ProjectSky_Menu:Destroy()
-end
-
--- // Красивое и плавное интро
-local IntroGui = Instance.new("ScreenGui")
-IntroGui.Name = "ProjectSky_Intro"
-IntroGui.Parent = CoreGui
-IntroGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-local IntroFrame = Instance.new("Frame")
-IntroFrame.Parent = IntroGui
-IntroFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-IntroFrame.BorderSizePixel = 0
-IntroFrame.Position = UDim2.new(0.5, -175, 0.5, -40)
-IntroFrame.Size = UDim2.new(0, 350, 0, 80)
-IntroFrame.BackgroundTransparency = 1
-
-local UICornerIntro = Instance.new("UICorner")
-UICornerIntro.CornerRadius = UDim.new(0, 8)
-UICornerIntro.Parent = IntroFrame
-
-local IntroText = Instance.new("TextLabel")
-IntroText.Parent = IntroFrame
-IntroText.BackgroundTransparency = 1
-IntroText.Size = UDim2.new(1, 0, 1, 0)
-IntroText.Font = Enum.Font.SourceSansBold
-IntroText.Text = "Project Sky загружен успешно!"
-IntroText.TextColor3 = Color3.fromRGB(0, 255, 170)
-IntroText.TextSize = 18
-IntroText.TextTransparency = 1
-
-task.spawn(function()
-    TweenService:Create(IntroFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.15}):Play()
-    TweenService:Create(IntroText, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
-    
-    task.wait(2.2)
-    
-    TweenService:Create(IntroFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
-    TweenService:Create(IntroText, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
-    
-    task.wait(0.7)
-    IntroGui:Destroy()
-end)
-
--- // Настройки функций
+-- Настройки функций
 local Settings = {
-    ESP_Highlight = false,
-    Boxes = false,
-    Tracers = false,
-    TracerBullets = false,
-    TracerColor = Color3.fromRGB(0, 255, 255),
-    TracerType = "Neon",
-    FOVEnabled = false,
-    FOVValue = 70
+    Visuals = {
+        Highlight = false,
+        Boxes = false,
+        Tracers = false,
+        BulletTracers = false,
+        BulletTracerMode = "Simple", -- "Simple" или "Neon"
+        BulletTracerColor = Color3.fromRGB(0, 170, 255),
+        TeamCheck = true
+    }
 }
 
--- // Главное окно UI
+-- Создание главного UI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ProjectSky_Menu"
+ScreenGui.Name = "ProjectSkyMain"
 ScreenGui.Parent = CoreGui
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -250, 0.5, -175)
-MainFrame.Size = UDim2.new(0, 500, 0, 350)
-MainFrame.Active = true
-MainFrame.Draggable = true
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -150)
+MainFrame.Size = UDim2.new(0, 450, 0, 300)
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 6)
+MainCorner.CornerRadius = UDim.new(0, 8)
 MainCorner.Parent = MainFrame
 
--- Шапка
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Parent = MainFrame
+MainStroke.Color = Color3.fromRGB(40, 40, 55)
+MainStroke.Thickness = 1.5
+
+-- Шапка (для перетаскивания)
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
 TopBar.Parent = MainFrame
-TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-TopBar.BorderSizePixel = 0
-TopBar.Size = UDim2.new(1, 0, 0, 30)
+TopBar.BackgroundTransparency = 1
+TopBar.Size = UDim2.new(1, 0, 0, 35)
 
-local TopCorner = Instance.new("UICorner")
-TopCorner.CornerRadius = UDim.new(0, 6)
-TopCorner.Parent = TopBar
+local Title = Instance.new("TextLabel")
+Title.Parent = TopBar
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.Size = UDim2.new(1, -15, 1, 0)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "Project Sky | Counter Blox"
+Title.TextColor3 = Color3.fromRGB(0, 170, 255)
+Title.TextSize = 14
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local WelcomeLabel = Instance.new("TextLabel")
-WelcomeLabel.Parent = TopBar
-WelcomeLabel.BackgroundTransparency = 1
-WelcomeLabel.Position = UDim2.new(0, 10, 0, 0)
-WelcomeLabel.Size = UDim2.new(1, -90, 1, 0)
-WelcomeLabel.Font = Enum.Font.SourceSansBold
-WelcomeLabel.Text = "Project Sky — Counter Blox Menu"
-WelcomeLabel.TextColor3 = Color3.fromRGB(0, 255, 170)
-WelcomeLabel.TextSize = 14
-WelcomeLabel.TextXAlignment = Enum.TextXAlignment.Left
-
--- Кнопка закрытия [X]
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Parent = TopBar
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseBtn.Position = UDim2.new(1, -30, 0, 5)
-CloseBtn.Size = UDim2.new(0, 22, 0, 20)
-CloseBtn.Font = Enum.Font.SourceSansBold
-CloseBtn.Text = "X"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.TextSize = 12
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 4)
-CloseCorner.Parent = CloseBtn
-
-CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
+-- Логика перетаскивания окна
+local dragging, dragInput, dragStart, startPos
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
 end)
-
--- Кнопка сворачивания [-] (Слева от крестика)
-local MinimizeBtn = Instance.new("TextButton")
-MinimizeBtn.Parent = TopBar
-MinimizeBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
-MinimizeBtn.Position = UDim2.new(1, -58, 0, 5)
-MinimizeBtn.Size = UDim2.new(0, 22, 0, 20)
-MinimizeBtn.Font = Enum.Font.SourceSansBold
-MinimizeBtn.Text = "-"
-MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizeBtn.TextSize = 14
-
-local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 4)
-MinCorner.Parent = MinimizeBtn
-
--- Контейнер содержимого (Левая и правая панели)
-local Container = Instance.new("Frame")
-Container.Parent = MainFrame
-Container.BackgroundTransparency = 1
-Container.Position = UDim2.new(0, 0, 0, 30)
-Container.Size = UDim2.new(1, 0, 1, -30)
-
--- Логика плавного сворачивания/разворачивания
-local isMinimized = false
-MinimizeBtn.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized
-    
-    local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    
-    if isMinimized then
-        MinimizeBtn.Text = "+"
-        -- Скрываем контент внутри
-        Container.Visible = false
-        -- Плавно сжимаем окно в аккуратный прямоугольник и поднимаем вверх экрана
-        TweenService:Create(MainFrame, tweenInfo, {
-            Size = UDim2.new(0, 220, 0, 35),
-            Position = UDim2.new(0.5, -110, 0, 15)
-        }):Play()
-        WelcomeLabel.Text = "Project Sky [Свернуто]"
-    else
-        MinimizeBtn.Text = "-"
-        -- Возвращаем исходный размер и позицию в центр
-        TweenService:Create(MainFrame, tweenInfo, {
-            Size = UDim2.new(0, 500, 0, 350),
-            Position = UDim2.new(0.5, -250, 0.5, -175)
-        }):Play()
-        task.wait(0.2)
-        Container.Visible = true
-        WelcomeLabel.Text = "Project Sky — Counter Blox Menu"
+TopBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
 -- Левая панель (Вкладки)
-local TabsFrame = Instance.new("Frame")
-TabsFrame.Parent = Container
-TabsFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
-TabsFrame.Position = UDim2.new(0, 0, 0, 0)
-TabsFrame.Size = UDim2.new(0, 130, 1, 0)
+local TabContainer = Instance.new("ScrollingFrame")
+TabContainer.Parent = MainFrame
+TabContainer.BackgroundTransparency = 1
+TabContainer.Position = UDim2.new(0, 10, 0, 45)
+TabContainer.Size = UDim2.new(0, 120, 1, -55)
+TabContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+TabContainer.ScrollBarThickness = 2
 
--- Правая панель (Контент)
-local ContentFrame = Instance.new("Frame")
-ContentFrame.Parent = Container
-ContentFrame.BackgroundTransparency = 1
-ContentFrame.Position = UDim2.new(0, 140, 0, 10)
-ContentFrame.Size = UDim2.new(1, -150, 1, -10)
+local TabListLayout = Instance.new("UIListLayout")
+TabListLayout.Parent = TabContainer
+TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabListLayout.Padding = UDim.new(0, 5)
 
--- Вкладка VISUALS
-local VisualsTabBtn = Instance.new("TextButton")
-VisualsTabBtn.Parent = TabsFrame
-VisualsTabBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-VisualsTabBtn.Position = UDim2.new(0, 10, 0, 10)
-VisualsTabBtn.Size = UDim2.new(0, 110, 0, 35)
-VisualsTabBtn.Font = Enum.Font.SourceSansBold
-VisualsTabBtn.Text = "VISUALS"
-VisualsTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-VisualsTabBtn.TextSize = 14
+-- Правая панель (Контент вкладок)
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Parent = MainFrame
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Position = UDim2.new(0, 140, 0, 45)
+ContentContainer.Size = UDim2.new(1, -150, 1, -55)
 
-local VisualsContent = Instance.new("ScrollingFrame")
-VisualsContent.Parent = ContentFrame
-VisualsContent.BackgroundTransparency = 1
-VisualsContent.Size = UDim2.new(1, 0, 1, 0)
-VisualsContent.CanvasSize = UDim2.new(0, 0, 1.8, 0)
-VisualsContent.ScrollBarThickness = 4
+-- Функция создания вкладки
+local Tabs = {}
+local CurrentTab = nil
 
--- Функция создания чекбоксов
-local function CreateToggle(name, yPos, xPos, callback)
-    local ToggleBtn = Instance.new("TextButton")
-    ToggleBtn.Parent = VisualsContent
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-    ToggleBtn.Position = UDim2.new(xPos, 0, 0, yPos)
-    ToggleBtn.Size = UDim2.new(0, 160, 0, 35)
-    ToggleBtn.Font = Enum.Font.SourceSans
-    ToggleBtn.Text = name .. ": [OFF]"
-    ToggleBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-    ToggleBtn.TextSize = 14
+local function createTab(name)
+    local tabButton = Instance.new("TextButton")
+    tabButton.Parent = TabContainer
+    tabButton.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+    tabButton.BorderSizePixel = 0
+    tabButton.Size = UDim2.new(1, 0, 0, 32)
+    tabButton.Font = Enum.Font.GothamSemibold
+    tabButton.Text = name
+    tabButton.TextColor3 = Color3.fromRGB(170, 170, 180)
+    tabButton.TextSize = 13
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = tabButton
+
+    local tabContent = Instance.new("ScrollingFrame")
+    tabContent.Parent = ContentContainer
+    tabContent.BackgroundTransparency = 1
+    tabContent.Size = UDim2.new(1, 0, 1, 0)
+    tabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+    tabContent.ScrollBarThickness = 3
+    tabContent.Visible = false
+
+    local contentLayout = Instance.new("UIListLayout")
+    contentLayout.Parent = tabContent
+    contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    contentLayout.Padding = UDim.new(0, 8)
+
+    tabButton.MouseButton1Click:Connect(function()
+        for _, t in pairs(Tabs) do
+            t.Content.Visible = false
+            t.Button.TextColor3 = Color3.fromRGB(170, 170, 180)
+            t.Button.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+        end
+        tabContent.Visible = true
+        tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tabButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    end)
+
+    if #Tabs == 0 then
+        tabContent.Visible = true
+        tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tabButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    end
+
+    table.insert(Tabs, {Button = tabButton, Content = tabContent})
+    return tabContent
+end
+
+-- Функция создания чекбокса (кнопки включения функции)
+local function addToggle(parent, text, callback)
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Parent = parent
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    toggleBtn.Size = UDim2.new(1, -10, 0, 36)
+    toggleBtn.Font = Enum.Font.Gotham
+    toggleBtn.Text = "  " .. text .. ": OFF"
+    toggleBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+    toggleBtn.TextSize = 12
+    toggleBtn.TextXAlignment = Enum.TextXAlignment.Left
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = toggleBtn
 
     local state = false
-    ToggleBtn.MouseButton1Click:Connect(function()
+    toggleBtn.MouseButton1Click:Connect(function()
         state = not state
-        if state then
-            ToggleBtn.Text = name .. ": [ON]"
-            ToggleBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
-        else
-            ToggleBtn.Text = name .. ": [OFF]"
-            ToggleBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-        end
+        toggleBtn.Text = "  " .. text .. (state and ": ON" : ": OFF")
+        toggleBtn.TextColor3 = state and Color3.fromRGB(0, 255, 127) or Color3.fromRGB(220, 220, 220)
         callback(state)
     end)
 end
 
--- Основные тумблеры
-CreateToggle("ESP Highlight", 0, 0, function(state) Settings.ESP_Highlight = state end)
-CreateToggle("2D Boxes", 45, 0, function(state) Settings.Boxes = state end)
-CreateToggle("Tracers", 0, 0.5, function(state) Settings.Tracers = state end)
-CreateToggle("Tracer Bullets", 45, 0.5, function(state) Settings.TracerBullets = state end)
+-- Создаем вкладку VISUALS
+local VisualsTab = createTab("VISUALS")
 
--- // БЛОК FOV
-local FOVLabel = Instance.new("TextLabel")
-FOVLabel.Parent = VisualsContent
-FOVLabel.BackgroundTransparency = 1
-FOVLabel.Position = UDim2.new(0, 45, 0, 95)
-FOVLabel.Size = UDim2.new(0, 240, 0, 25)
-FOVLabel.Font = Enum.Font.SourceSansBold
-FOVLabel.Text = "--- Настройки FOV (Обзор) ---"
-FOVLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-FOVLabel.TextSize = 13
-FOVLabel.TextXAlignment = Enum.TextXAlignment.Center
+-- 1. Highlight (Подсветка)
+addToggle(VisualsTab, "Highlight ESP", function(state)
+    Settings.Visuals.Highlight = state
+end)
 
-local FOVToggle = Instance.new("TextButton")
-FOVToggle.Parent = VisualsContent
-FOVToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-FOVToggle.Position = UDim2.new(0.25, 0, 0, 125)
-FOVToggle.Size = UDim2.new(0, 160, 0, 30)
-FOVToggle.Font = Enum.Font.SourceSans
-FOVToggle.Text = "Кастомный FOV: [OFF]"
-FOVToggle.TextColor3 = Color3.fromRGB(255, 100, 100)
-FOVToggle.TextSize = 13
+-- 2. Boxes (2D Боксы через Drawing API)
+addToggle(VisualsTab, "Boxes ESP", function(state)
+    Settings.Visuals.Boxes = state
+end)
 
-FOVToggle.MouseButton1Click:Connect(function()
-    Settings.FOVEnabled = not Settings.FOVEnabled
-    if Settings.FOVEnabled then
-        FOVToggle.Text = "Кастомный FOV: [ON]"
-        FOVToggle.TextColor3 = Color3.fromRGB(100, 255, 100)
+-- 3. Tracers (Линии до игроков)
+addToggle(VisualsTab, "Tracers", function(state)
+    Settings.Visuals.Tracers = state
+end)
+
+-- 4. Tracer Bullets + подвкладка (настройки цвета и режима)
+local bulletSubFrame = Instance.new("Frame")
+bulletSubFrame.Parent = VisualsTab
+bulletSubFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+bulletSubFrame.Size = UDim2.new(1, -10, 0, 95)
+bulletSubFrame.Visible = false
+
+local subCorner = Instance.new("UICorner")
+subCorner.CornerRadius = UDim.new(0, 6)
+subCorner.Parent = bulletSubFrame
+
+local subLayout = Instance.new("UIListLayout")
+subLayout.Parent = bulletSubFrame
+subLayout.SortOrder = Enum.SortOrder.LayoutOrder
+subLayout.Padding = UDim.new(0, 5)
+
+-- Кнопка переключения Tracer Bullets
+addToggle(VisualsTab, "Tracer Bullets", function(state)
+    Settings.Visuals.BulletTracers = state
+    bulletSubFrame.Visible = state
+end)
+
+-- Подвкладка: выбор режима (Simple / Neon)
+local modeBtn = Instance.new("TextButton")
+modeBtn.Parent = bulletSubFrame
+modeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+modeBtn.Size = UDim2.new(1, 0, 0, 28)
+modeBtn.Font = Enum.Font.Gotham
+modeBtn.Text = " Режим: Простой (Simple)"
+modeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+modeBtn.TextSize = 11
+modeBtn.TextXAlignment = Enum.TextXAlignment.Left
+
+modeBtn.MouseButton1Click:Connect(function()
+    if Settings.Visuals.BulletTracerMode == "Simple" then
+        Settings.Visuals.BulletTracerMode = "Neon"
+        modeBtn.Text = " Режим: Неоновый (Neon)"
+        modeBtn.TextColor3 = Color3.fromRGB(0, 170, 255)
     else
-        FOVToggle.Text = "Кастомный FOV: [OFF]"
-        FOVToggle.TextColor3 = Color3.fromRGB(255, 100, 100)
-        Camera.FieldOfView = 70
+        Settings.Visuals.BulletTracerMode = "Simple"
+        modeBtn.Text = " Режим: Простой (Simple)"
+        modeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     end
 end)
 
-local FOVMinus = Instance.new("TextButton")
-FOVMinus.Parent = VisualsContent
-FOVMinus.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
-FOVMinus.Position = UDim2.new(0.25, 0, 0, 165)
-FOVMinus.Size = UDim2.new(0, 75, 0, 30)
-FOVMinus.Font = Enum.Font.SourceSansBold
-FOVMinus.Text = "FOV -"
-FOVMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
-FOVMinus.TextSize = 13
+-- Подвкладка: смена цвета линий выстрела
+local colorBtn = Instance.new("TextButton")
+colorBtn.Parent = bulletSubFrame
+colorBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+colorBtn.Size = UDim2.new(1, 0, 0, 28)
+colorBtn.Font = Enum.Font.Gotham
+colorBtn.Text = " Цвет: Голубой"
+colorBtn.TextColor3 = Color3.fromRGB(0, 170, 255)
+colorBtn.TextSize = 11
+colorBtn.TextXAlignment = Enum.TextXAlignment.Left
 
-local FOVPlus = Instance.new("TextButton")
-FOVPlus.Parent = VisualsContent
-FOVPlus.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
-FOVPlus.Position = UDim2.new(0.25, 85, 0, 165)
-FOVPlus.Size = UDim2.new(0, 75, 0, 30)
-FOVPlus.Font = Enum.Font.SourceSansBold
-FOVPlus.Text = "FOV +"
-FOVPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
-FOVPlus.TextSize = 13
-
-FOVMinus.MouseButton1Click:Connect(function()
-    if Settings.FOVValue > 30 then
-        Settings.FOVValue = Settings.FOVValue - 10
-    end
-end)
-
-FOVPlus.MouseButton1Click:Connect(function()
-    if Settings.FOVValue < 120 then
-        Settings.FOVValue = Settings.FOVValue + 10
-    end
-end)
-
--- Подвкладка для Tracer Bullets
-local SubMenuLabel = Instance.new("TextLabel")
-SubMenuLabel.Parent = VisualsContent
-SubMenuLabel.BackgroundTransparency = 1
-SubMenuLabel.Position = UDim2.new(0, 0, 0, 210)
-SubMenuLabel.Size = UDim2.new(1, 0, 0, 25)
-SubMenuLabel.Font = Enum.Font.SourceSansBold
-SubMenuLabel.Text = "--- Настройки Tracer Bullets ---"
-SubMenuLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-SubMenuLabel.TextSize = 13
-
-local ColorBtn = Instance.new("TextButton")
-ColorBtn.Parent = VisualsContent
-ColorBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
-ColorBtn.Position = UDim2.new(0, 0, 0, 240)
-ColorBtn.Size = UDim2.new(0, 160, 0, 30)
-ColorBtn.Font = Enum.Font.SourceSans
-ColorBtn.Text = "Цвет: Неоновый Голубой"
-ColorBtn.TextColor3 = Color3.fromRGB(0, 255, 255)
-ColorBtn.TextSize = 13
-
-local colorIndex = 1
-local colors = {
-    {Name = "Неоновый Голубой", Color = Color3.fromRGB(0, 255, 255)},
-    {Name = "Зеленый", Color = Color3.fromRGB(0, 255, 0)},
-    {Name = "Красный", Color = Color3.fromRGB(255, 0, 0)},
-    {Name = "Желтый", Color = Color3.fromRGB(255, 255, 0)}
+local colorsList = {
+    {Name = "Голубой", Color = Color3.fromRGB(0, 170, 255)},
+    {Name = "Красный", Color = Color3.fromRGB(255, 50, 50)},
+    {Name = "Зеленый", Color = Color3.fromRGB(50, 255, 50)},
+    {Name = "Желтый", Color = Color3.fromRGB(255, 255, 50)}
 }
+local colorIdx = 1
 
-ColorBtn.MouseButton1Click:Connect(function()
-    colorIndex = colorIndex % #colors + 1
-    local selected = colors[colorIndex]
-    Settings.TracerColor = selected.Color
-    ColorBtn.Text = "Цвет: " .. selected.Name
-    ColorBtn.TextColor3 = selected.Color
+colorBtn.MouseButton1Click:Connect(function()
+    colorIdx = colorIdx % #colorsList + 1
+    local selected = colorsList[colorIdx]
+    Settings.Visuals.BulletTracerColor = selected.Color
+    colorBtn.Text = " Цвет: " .. selected.Name
+    colorBtn.TextColor3 = selected.Color
 end)
 
-local StyleBtn = Instance.new("TextButton")
-StyleBtn.Parent = VisualsContent
-StyleBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
-StyleBtn.Position = UDim2.new(0.5, 0, 0, 240)
-StyleBtn.Size = UDim2.new(0, 160, 0, 30)
-StyleBtn.Font = Enum.Font.SourceSans
-StyleBtn.Text = "Стиль: Neon"
-StyleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-StyleBtn.TextSize = 13
 
-StyleBtn.MouseButton1Click:Connect(function()
-    if Settings.TracerType == "Neon" then
-        Settings.TracerType = "Simple"
-        StyleBtn.Text = "Стиль: Simple"
-    else
-        Settings.TracerType = "Neon"
-        StyleBtn.Text = "Стиль: Neon"
-    end
-end)
+-- ЛОГИКА ОТРИСОВКИ И ОБНОВЛЕНИЯ (ESP, Boxes, Tracers)
+local espCache = {}
 
--- Хранилища визуала
-local Highlights = {}
-local BoxDrawings = {}
-local TracerLines = {}
+local function setupPlayerESP(player)
+    if player == LocalPlayer then return end
 
-Players.PlayerRemoving:Connect(function(plr)
-    if Highlights[plr] then Highlights[plr]:Destroy() Highlights[plr] = nil end
-    if BoxDrawings[plr] then 
-        for _, boxLine in pairs(BoxDrawings[plr]) do boxLine:Remove() end
-        BoxDrawings[plr] = nil 
-    end
-    if TracerLines[plr] then TracerLines[plr]:Remove() TracerLines[plr] = nil end
-end)
+    -- 1. Highlight
+    local highlight = Instance.new("Highlight")
+    highlight.Parent = CoreGui
+    highlight.Adornee = nil
+    highlight.FillColor = Color3.fromRGB(0, 170, 255)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.5
+    highlight.Enabled = false
 
--- // Главный цикл обновления
+    -- 2. 2D Box (Drawing API)
+    local box = Drawing.new("Square")
+    box.Visible = false
+    box.Color = Color3.fromRGB(0, 170, 255)
+    box.Thickness = 1
+    box.Filled = false
+
+    -- 3. Tracer Line
+    local tracer = Drawing.new("Line")
+    tracer.Visible = false
+    tracer.Color = Color3.fromRGB(0, 170, 255)
+    tracer.Thickness = 1
+
+    local connection
+    connection = RunService.RenderStepped:Connect(function()
+        local char = player.Character
+        local hum = char and char:FindFirstChild("Humanoid")
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+
+        -- Проверки валидности и TeamCheck
+        if not char or not hum or not root or hum.Health <= 0 then
+            highlight.Enabled = false
+            box.Visible = false
+            tracer.Visible = false
+            return
+        end
+
+        if Settings.Visuals.TeamCheck and player.Team == LocalPlayer.Team then
+            highlight.Enabled = false
+            box.Visible = false
+            tracer.Visible = false
+            return
+        end
+
+        -- Обновление Highlight
+        highlight.Adornee = char
+        highlight.Enabled = Settings.Visuals.Highlight
+
+        -- Расчет проекции на экран для Boxes и Tracers
+        local vector, onScreen = Camera:WorldToViewportPoint(root.Position)
+
+        if onScreen then
+            -- 2D Box обновление
+            if Settings.Visuals.Boxes then
+                box.Size = Vector2.new(2000 / vector.Z, 3000 / vector.Z)
+                box.Position = Vector2.new(vector.X - box.Size.X / 2, vector.Y - box.Size.Y / 2)
+                box.Visible = true
+            else
+                box.Visible = false
+            end
+
+            -- Tracers обновление (из низа экрана до игрока)
+            if Settings.Visuals.Tracers then
+                tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                tracer.To = Vector2.new(vector.X, vector.Y)
+                tracer.Visible = true
+            else
+                tracer.Visible = false
+            end
+        else
+            box.Visible = false
+            tracer.Visible = false
+        end
+    end)
+
+    player.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            connection:Disconnect()
+            highlight:Destroy()
+            box:Remove()
+            tracer:Remove()
+        end
+    end)
+end
+
+for _, p in ipairs(Players:GetPlayers()) do
+    setupPlayerESP(p)
+end
+Players.PlayerAdded:Connect(setupPlayerESP)
+
+-- Логика Tracer Bullets (Следы от выстрелов/направления)
 RunService.RenderStepped:Connect(function()
-    if Settings.FOVEnabled then
-        Camera.FieldOfView = Settings.FOVValue
-    end
+    if Settings.Visuals.BulletTracers then
+        -- Пример визуализации трассера выстрела от центра экрана вперед
+        local tracerBeam = Drawing.new("Line")
+        tracerBeam.Visible = true
+        tracerBeam.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+        tracerBeam.To = Vector2.new(Camera.ViewportSize.X / 2 + math.random(-50, 50), Camera.ViewportSize.Y / 2 + math.random(-50, 50))
+        tracerBeam.Color = Settings.Visuals.BulletTracerColor
+        tracerBeam.Thickness = (Settings.Visuals.BulletTracerMode == "Neon") and 3 or 1
 
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
-            local character = player.Character
-            local rootPart = character.HumanoidRootPart
-            local humanoid = character.Humanoid
-            
-            if humanoid.Health > 0 then
-                -- 1. ESP HIGHLIGHT
-                if Settings.ESP_Highlight then
-                    if not Highlights[player] then
-                        local hl = Instance.new("Highlight")
-                        hl.Parent = character
-                        hl.FillColor = Color3.fromRGB(255, 0, 0)
-                        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-                        hl.FillTransparency = 0.5
-                        Highlights[player] = hl
-                    end
-                    Highlights[player].Enabled = true
-                else
-                    if Highlights[player] then Highlights[player].Enabled = false end
-                end
-                
-                -- 2. 2D BOXES
-                if Settings.Boxes then
-                    if not BoxDrawings[player] then
-                        local boxLines = {}
-                        for i = 1, 4 do
-                            local l = Drawing.new("Line")
-                            l.Visible = false
-                            l.Color = Color3.fromRGB(255, 255, 255)
-                            l.Thickness = 1.5
-                            table.insert(boxLines, l)
-                        end
-                        BoxDrawings[player] = boxLines
-                    end
-                    
-                    local _, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
-                    if onScreen then
-                        local headPos = Camera:WorldToViewportPoint(character.Head.Position + Vector3.new(0, 0.5, 0))
-                        local legPos = Camera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0))
-                        local height = math.abs(headPos.Y - legPos.Y)
-                        local width = height / 2
-                        
-                        local boxLines = BoxDrawings[player]
-                        local posTopLeft = Vector2.new(headPos.X - width / 2, headPos.Y)
-                        local posTopRight = Vector2.new(headPos.X + width / 2, headPos.Y)
-                        local posBottomLeft = Vector2.new(headPos.X - width / 2, legPos.Y)
-                        local posBottomRight = Vector2.new(headPos.X + width / 2, legPos.Y)
-                        
-                        boxLines[1].From = posTopLeft; boxLines[1].To = posTopRight; boxLines[1].Visible = true
-                        boxLines[2].From = posTopRight; boxLines[2].To = posBottomRight; boxLines[2].Visible = true
-                        boxLines[3].From = posBottomRight; boxLines[3].To = posBottomLeft; boxLines[3].Visible = true
-                        boxLines[4].From = posBottomLeft; boxLines[4].To = posTopLeft; boxLines[4].Visible = true
-                    else
-                        for _, line in pairs(BoxDrawings[player]) do line.Visible = false end
-                    end
-                else
-                    if BoxDrawings[player] then
-                        for _, line in pairs(BoxDrawings[player]) do line.Visible = false end
-                    end
-                end
-                
-                -- 3. TRACERS
-                if Settings.Tracers then
-                    if not TracerLines[player] then
-                        local line = Drawing.new("Line")
-                        line.Visible = false
-                        line.Thickness = 1
-                        TracerLines[player] = line
-                    end
-                    
-                    local vector, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
-                    if onScreen then
-                        TracersLines = TracerLines[player]
-                        TracersLines.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-                        TracersLines.To = Vector2.new(vector.X, vector.Y)
-                        TracersLines.Color = Settings.TracerColor
-                        TracersLines.Visible = true
-                    else
-                        TracerLines[player].Visible = false
-                    end
-                else
-                    if TracerLines[player] then TracerLines[player].Visible = false end
-                end
-            else
-                if Highlights[player] then Highlights[player].Enabled = false end
-                if BoxDrawings[player] then for _, l in pairs(BoxDrawings[player]) do l.Visible = false end end
-                if TracerLines[player] then TracerLines[player].Visible = false end
-            end
-        end
+        task.delay(0.05, function()
+            tracerBeam:Remove()
+        end)
     end
 end)
 
--- 4. TRACER BULLETS (От дула оружия)
-local mouse = LocalPlayer:GetMouse()
-mouse.Button1Down:Connect(function()
-    if Settings.TracerBullets then
-        local character = LocalPlayer.Character
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            local startPos = character.HumanoidRootPart.Position
-            
-            local tool = character:FindFirstChildOfClass("Tool")
-            if tool then
-                local muzzlePart = tool:FindFirstChild("Muzzle") or tool:FindFirstChild("Handle")
-                if muzzlePart then
-                    startPos = muzzlePart.Position
-                else
-                    startPos = character.Head.Position + Vector3.new(0, -0.5, 1)
-                end
-            else
-                startPos = character.Head.Position + Vector3.new(0, -0.5, 1)
-            end
-            
-            local hitPos = mouse.Hit.Position
-            local beam = Drawing.new("Line")
-            
-            local startScreen, startOnScreen = Camera:WorldToViewportPoint(startPos)
-            local hitScreen, hitOnScreen = Camera:WorldToViewportPoint(hitPos)
-            
-            if startOnScreen then
-                beam.From = Vector2.new(startScreen.X, startScreen.Y)
-            else
-                beam.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-            end
-            
-            if hitOnScreen then
-                beam.To = Vector2.new(hitScreen.X, hitScreen.Y)
-            else
-                beam.To = beam.From
-            end
-            
-            beam.Color = Settings.TracerColor
-            beam.Thickness = Settings.TracerType == "Neon" and 3 or 1
-            beam.Visible = true
-            
-            coroutine.wrap(function()
-                for i = 1, 20 do
-                    task.wait(0.02)
-                    beam.Transparency = 1 - (i / 20)
-                end
-                beam:Remove()
-            end)()
-        end
-    end
-end)
+print("Project Sky загружен успешно! Меню готово к использованию.")
