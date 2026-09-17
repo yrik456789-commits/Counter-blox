@@ -1,5 +1,5 @@
 --[[
-    Project Sky 1.0 - Murder Mystery 2 (Full Script: Intro + Minimize/Close + Fixed Combat/Misc/Visuals)
+    Project Sky 1.1 - Murder Mystery 2 (Full Script: Sized Intro 1.1 + Silent Aim + Gun Tracers + Options + Themes)
 ]]--
 
 if _G.ProjectSkyMM2Loaded then
@@ -18,39 +18,55 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- ==================== ИНТРО АНИМАЦИЯ ====================
-local IntroGui = Instance.new("ScreenGui")
-IntroGui.Name = "ProjectSkyIntro"
-IntroGui.Parent = CoreGui
+-- ==================== НАСТРОЙКИ ЯЗЫКА И ТЕМ ====================
+local CurrentLang = "RU"
+local CurrentTheme = "Purple"
 
-local IntroBg = Instance.new("Frame", IntroGui)
-IntroBg.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
-IntroBg.Size = UDim2.new(1, 0, 1, 0)
-IntroBg.BackgroundTransparency = 0
+local Themes = {
+    Purple = {Primary = Color3.fromRGB(14, 14, 18), Accent = Color3.fromRGB(110, 40, 210), Stroke = Color3.fromRGB(60, 30, 95)},
+    Blue = {Primary = Color3.fromRGB(12, 16, 22), Accent = Color3.fromRGB(0, 120, 255), Stroke = Color3.fromRGB(20, 60, 120)},
+    Red = {Primary = Color3.fromRGB(20, 12, 12), Accent = Color3.fromRGB(220, 40, 40), Stroke = Color3.fromRGB(100, 25, 25)},
+    Green = {Primary = Color3.fromRGB(12, 20, 14), Accent = Color3.fromRGB(40, 200, 100), Stroke = Color3.fromRGB(25, 90, 45)}
+}
 
-local IntroText = Instance.new("TextLabel", IntroBg)
+-- Глобальный ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ProjectSkyMM2"
+ScreenGui.Parent = CoreGui
+
+-- ==================== ИНТРО АНИМАЦИЯ (ПО РАЗМЕРУ ГУИ 1.1) ====================
+local IntroFrame = Instance.new("Frame", ScreenGui)
+IntroFrame.Name = "ProjectSkyIntro"
+IntroFrame.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
+IntroFrame.Size = UDim2.new(0, 460, 0, 330)
+IntroFrame.Position = UDim2.new(0.5, -230, 0.5, -165)
+Instance.new("UICorner", IntroFrame).CornerRadius = UDim.new(0, 10)
+local introStroke = Instance.new("UIStroke", IntroFrame)
+introStroke.Color = Color3.fromRGB(110, 40, 210)
+introStroke.Thickness = 1.5
+
+local IntroText = Instance.new("TextLabel", IntroFrame)
 IntroText.BackgroundTransparency = 1
 IntroText.AnchorPoint = Vector2.new(0.5, 0.5)
-IntroText.Position = UDim2.new(-0.5, 0, 0.5, 0)
-IntroText.Size = UDim2.new(0, 500, 0, 100)
+IntroText.Position = UDim2.new(0.5, 0, 0.5, 0)
+IntroText.Size = UDim2.new(0, 400, 0, 80)
 IntroText.Font = Enum.Font.GothamBold
-IntroText.Text = "PROJECT SKY <font color='#8c46ff'>1.0</font>"
+IntroText.Text = "PROJECT SKY <font color='#8c46ff'>1.1</font>"
 IntroText.RichText = true
 IntroText.TextColor3 = Color3.fromRGB(255, 255, 255)
-IntroText.TextSize = 36
+IntroText.TextSize = 32
 IntroText.TextXAlignment = Enum.TextXAlignment.Center
 
-TweenService:Create(IntroText, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
+task.wait(2.0)
 
-task.wait(2.2)
+TweenService:Create(IntroFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
+TweenService:Create(introStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 1}):Play()
+TweenService:Create(IntroText, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
 
-TweenService:Create(IntroBg, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
-TweenService:Create(IntroText, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
+task.wait(0.5)
+IntroFrame:Destroy()
 
-task.wait(0.6)
-IntroGui:Destroy()
-
--- Настройки
+-- Настройки скрипта
 local Settings = {
     Visuals = {
         Highlight = false,
@@ -61,6 +77,10 @@ local Settings = {
         BulletTracerColor = Color3.fromRGB(140, 70, 255),
         GunAlert = false,
         GunESP = false
+    },
+    Combat = {
+        SilentAim = false,
+        SilentRadius = 100
     },
     Misc = {
         AntiFling = false,
@@ -113,12 +133,7 @@ local function getPlayerRole(player)
     end
 end
 
--- ==================== ОСНОВНОЙ ГУИ (ПОЯВЛЯЕТСЯ ПОСЛЕ ИНТРО) ====================
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ProjectSkyMM2"
-ScreenGui.Parent = CoreGui
-
--- Сообщение внизу экрана (Упал пистолет)
+-- ==================== ОСНОВНОЙ ГУИ ====================
 local GunAlertLabel = Instance.new("TextLabel", ScreenGui)
 GunAlertLabel.Name = "GunAlertLabel"
 GunAlertLabel.AnchorPoint = Vector2.new(0.5, 1)
@@ -138,9 +153,8 @@ alertStroke.Thickness = 1.5
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
+MainFrame.BackgroundColor3 = Themes.Purple.Primary
 MainFrame.BorderSizePixel = 0
--- Плавное появление (стартует чуть меньше и прозрачным)
 MainFrame.Position = UDim2.new(0.5, -230, 0.5, -165)
 MainFrame.Size = UDim2.new(0, 460, 0, 330)
 MainFrame.BackgroundTransparency = 1
@@ -148,11 +162,10 @@ MainFrame.BackgroundTransparency = 1
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
 local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Color = Color3.fromRGB(60, 30, 95)
+MainStroke.Color = Themes.Purple.Stroke
 MainStroke.Thickness = 1.5
 MainStroke.Transparency = 1
 
--- Анимация появления главного окна
 TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
 TweenService:Create(MainStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0}):Play()
 
@@ -167,13 +180,13 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.Size = UDim2.new(1, -100, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "PROJECT SKY <font color='#8c46ff'>| MM2 Advanced</font>"
+Title.Text = "PROJECT SKY <font color='#8c46ff'>| MM2 Advanced 1.1</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.fromRGB(240, 240, 245)
 Title.TextSize = 15
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Кнопка сворачивания (минимизации)
+-- Кнопки управления окном
 local MinimizeBtn = Instance.new("TextButton", TopBar)
 MinimizeBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 MinimizeBtn.Position = UDim2.new(1, -65, 0.5, -12)
@@ -184,7 +197,6 @@ MinimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
 MinimizeBtn.TextSize = 14
 Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0, 6)
 
--- Кнопка закрытия (крестик)
 local CloseBtn = Instance.new("TextButton", TopBar)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(60, 20, 30)
 CloseBtn.Position = UDim2.new(1, -35, 0.5, -12)
@@ -195,7 +207,6 @@ CloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
 CloseBtn.TextSize = 12
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 
--- Кнопка восстановления (появляется внутри свернутого прямоугольника)
 local RestoreBtn = Instance.new("TextButton", MainFrame)
 RestoreBtn.BackgroundTransparency = 1
 RestoreBtn.Size = UDim2.new(1, 0, 1, 0)
@@ -225,7 +236,6 @@ ContentContainer.BackgroundTransparency = 1
 ContentContainer.Position = UDim2.new(0, 145, 0, 50)
 ContentContainer.Size = UDim2.new(1, -155, 1, -60)
 
--- Логика сворачивания / разворачивания
 MinimizeBtn.MouseButton1Click:Connect(function()
     isMinimized = true
     TabContainer.Visible = false
@@ -260,13 +270,12 @@ RestoreBtn.MouseButton1Click:Connect(function()
     CloseBtn.Visible = true
 end)
 
--- Логика полного закрытия скрипта
 CloseBtn.MouseButton1Click:Connect(function()
     _G.ProjectSkyMM2Loaded = false
     ScreenGui:Destroy()
 end)
 
--- Перетаскивание UI
+-- Перетаскивание
 local dragging, dragStart, startPos
 TopBar.InputBegan:Connect(function(input)
     if not isMinimized and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
@@ -316,13 +325,13 @@ local function createTab(name)
         end
         tabContent.Visible = true
         tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        tabBtn.BackgroundColor3 = Color3.fromRGB(110, 40, 210)
+        tabBtn.BackgroundColor3 = Themes[CurrentTheme].Accent
     end)
 
     if #Tabs == 0 then
         tabContent.Visible = true
         tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        tabBtn.BackgroundColor3 = Color3.fromRGB(110, 40, 210)
+        tabBtn.BackgroundColor3 = Themes[CurrentTheme].Accent
     end
 
     table.insert(Tabs, {Button = tabBtn, Content = tabContent})
@@ -344,7 +353,7 @@ local function addToggle(parent, text, callback)
     btn.MouseButton1Click:Connect(function()
         state = not state
         btn.Text = "  " .. text .. (state and ": ON" or ": OFF")
-        btn.TextColor3 = state and Color3.fromRGB(160, 90, 255) or Color3.fromRGB(180, 180, 195)
+        btn.TextColor3 = state and Themes[CurrentTheme].Accent or Color3.fromRGB(180, 180, 195)
         callback(state)
     end)
     return btn
@@ -428,14 +437,40 @@ colorBtn.MouseButton1Click:Connect(function()
     colorBtn.TextColor3 = selected.Color
 end)
 
--- ==================== ВКЛАДКА 2: MISC ====================
-local MiscTab = createTab("MISC")
+-- ==================== ВКЛАДКА 2: COMBAT (SILENT AIM) ====================
+local CombatTab = createTab("COMBAT")
 
-addToggle(MiscTab, "Anti-Fling", function(s)
-    Settings.Misc.AntiFling = s
+addToggle(CombatTab, "Silent Aim", function(s)
+    Settings.Combat.SilentAim = s
 end)
 
--- Target Fling (Реальный флинг)
+local radiusSubFrame = Instance.new("Frame", CombatTab)
+radiusSubFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+radiusSubFrame.Size = UDim2.new(1, -10, 0, 36)
+Instance.new("UICorner", radiusSubFrame).CornerRadius = UDim.new(0, 6)
+
+local radiusBtn = Instance.new("TextButton", radiusSubFrame)
+radiusBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
+radiusBtn.Size = UDim2.new(1, 0, 1, 0)
+radiusBtn.Font = Enum.Font.Gotham
+radiusBtn.Text = " Радиус Aim: 100 px"
+radiusBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
+radiusBtn.TextSize = 11
+radiusBtn.TextXAlignment = Enum.TextXAlignment.Left
+
+local radii = {50, 100, 200, 500}
+local radiusIdx = 2
+radiusBtn.MouseButton1Click:Connect(function()
+    radiusIdx = (radiusIdx % #radii) + 1
+    Settings.Combat.SilentRadius = radii[radiusIdx]
+    radiusBtn.Text = " Радиус Aim: " .. Settings.Combat.SilentRadius .. " px"
+end)
+
+-- ==================== ВКЛАДКА 3: MISC ====================
+local MiscTab = createTab("MISC")
+
+addToggle(MiscTab, "Anti-Fling", function(s) Settings.Misc.AntiFling = s end)
+
 local flingSubFrame = Instance.new("Frame", MiscTab)
 flingSubFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 flingSubFrame.Size = UDim2.new(1, -10, 0, 72)
@@ -479,7 +514,6 @@ local function executeFling()
     local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
     
     if not root or not targetRoot then return end
-
     if flingConnection then flingConnection:Disconnect() end
 
     local bav = Instance.new("BodyAngularVelocity")
@@ -512,134 +546,54 @@ local function executeFling()
 end
 
 addButton(flingSubFrame, "🚀 Запустить Fling", executeFling)
+addToggle(MiscTab, "Noclip", function(s) Settings.Misc.Noclip = s end)
 
--- Fly
-local flySubFrame = Instance.new("Frame", MiscTab)
-flySubFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-flySubFrame.Size = UDim2.new(1, -10, 0, 32)
-flySubFrame.Visible = false
-Instance.new("UICorner", flySubFrame).CornerRadius = UDim.new(0, 6)
+-- ==================== ВКЛАДКА 4: OPTIONS ====================
+local OptionsTab = createTab("OPTIONS")
 
-local flySpeedBtn = Instance.new("TextButton", flySubFrame)
-flySpeedBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
-flySpeedBtn.Size = UDim2.new(1, 0, 1, 0)
-flySpeedBtn.Font = Enum.Font.Gotham
-flySpeedBtn.Text = " Скорость флая: 50"
-flySpeedBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
-flySpeedBtn.TextSize = 11
-flySpeedBtn.TextXAlignment = Enum.TextXAlignment.Left
+local langBtn = Instance.new("TextButton", OptionsTab)
+langBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 29)
+langBtn.Size = UDim2.new(1, -10, 0, 34)
+langBtn.Font = Enum.Font.Gotham
+langBtn.Text = " Язык / Language: RU"
+langBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
+langBtn.TextSize = 12
+langBtn.TextXAlignment = Enum.TextXAlignment.Left
+Instance.new("UICorner", langBtn).CornerRadius = UDim.new(0, 6)
 
-local speeds = {30, 50, 80, 120, 200}
-local speedIdx = 2
-flySpeedBtn.MouseButton1Click:Connect(function()
-    speedIdx = (speedIdx % #speeds) + 1
-    Settings.Misc.FlySpeed = speeds[speedIdx]
-    flySpeedBtn.Text = " Скорость флая: " .. Settings.Misc.FlySpeed
-end)
-
-local flyBg, flyBv
-local flyKeys = {W = false, A = false, S = false, D = false}
-
-UserInputService.InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    if input.KeyCode == Enum.KeyCode.W then flyKeys.W = true
-    elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = true
-    elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = true
-    elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = true end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.W then flyKeys.W = false
-    elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = false
-    elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = false
-    elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = false end
-end)
-
-addToggle(MiscTab, "Fly (Полёт)", function(state)
-    Settings.Misc.Fly = state
-    flySubFrame.Visible = state
-    
-    local char = LocalPlayer.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChild("Humanoid")
-    if not root or not hum then return end
-
-    if state then
-        flyBg = Instance.new("BodyGyro", root)
-        flyBg.P = 9e4
-        flyBg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
-        flyBg.cframe = root.CFrame
-        
-        flyBv = Instance.new("BodyVelocity", root)
-        flyBv.velocity = Vector3.new(0, 0, 0)
-        flyBv.maxForce = Vector3.new(9e9, 9e9, 9e9)
-        
-        hum.PlatformStand = true
-
-        task.spawn(function()
-            while Settings.Misc.Fly and char and root and root.Parent do
-                local moveDir = Vector3.new(0, 0, 0)
-                if flyKeys.W then moveDir = moveDir + Camera.CFrame.LookVector end
-                if flyKeys.S then moveDir = moveDir - Camera.CFrame.LookVector end
-                if flyKeys.A then moveDir = moveDir - Camera.CFrame.RightVector end
-                if flyKeys.D then moveDir = moveDir + Camera.CFrame.RightVector end
-                
-                if moveDir.Magnitude > 0 then moveDir = moveDir.Unit end
-                
-                flyBv.velocity = moveDir * Settings.Misc.FlySpeed
-                flyBg.cframe = Camera.CFrame
-                task.wait()
-            end
-        end)
+langBtn.MouseButton1Click:Connect(function()
+    if CurrentLang == "RU" then
+        CurrentLang = "EN"
+        langBtn.Text = " Language / Язык: EN"
     else
-        if flyBg then flyBg:Destroy() end
-        if flyBv then flyBv:Destroy() end
-        hum.PlatformStand = false
-        flyKeys = {W = false, A = false, S = false, D = false}
+        CurrentLang = "RU"
+        langBtn.Text = " Язык / Language: RU"
     end
 end)
 
-addToggle(MiscTab, "Noclip", function(s) Settings.Misc.Noclip = s end)
+local themeBtn = Instance.new("TextButton", OptionsTab)
+themeBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 29)
+themeBtn.Size = UDim2.new(1, -10, 0, 34)
+themeBtn.Font = Enum.Font.Gotham
+themeBtn.Text = " Тема меню: Фиолетовая"
+themeBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
+themeBtn.TextSize = 12
+themeBtn.TextXAlignment = Enum.TextXAlignment.Left
+Instance.new("UICorner", themeBtn).CornerRadius = UDim.new(0, 6)
 
--- SpinBot
-local spinSubFrame = Instance.new("Frame", MiscTab)
-spinSubFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-spinSubFrame.Size = UDim2.new(1, -10, 0, 32)
-spinSubFrame.Visible = false
-Instance.new("UICorner", spinSubFrame).CornerRadius = UDim.new(0, 6)
+local themeNames = {"Purple", "Blue", "Red", "Green"}
+local themeLabels = {"Фиолетовая", "Синяя", "Красная", "Зеленая"}
+local themeIdx = 1
 
-local spinSpeedBtn = Instance.new("TextButton", spinSubFrame)
-spinSpeedBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
-spinSpeedBtn.Size = UDim2.new(1, 0, 1, 0)
-spinSpeedBtn.Font = Enum.Font.Gotham
-spinSpeedBtn.Text = " Скорость спина: 50"
-spinSpeedBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
-spinSpeedBtn.TextSize = 11
-spinSpeedBtn.TextXAlignment = Enum.TextXAlignment.Left
-
-local spinSpeeds = {20, 50, 100, 200, 500}
-local spinSpeedIdx = 2
-spinSpeedBtn.MouseButton1Click:Connect(function()
-    spinSpeedIdx = (spinSpeedIdx % #spinSpeeds) + 1
-    Settings.Misc.SpinSpeed = spinSpeeds[spinSpeedIdx]
-    spinSpeedBtn.Text = " Скорость спина: " .. Settings.Misc.SpinSpeed
+themeBtn.MouseButton1Click:Connect(function()
+    themeIdx = (themeIdx % #themeNames) + 1
+    CurrentTheme = themeNames[themeIdx]
+    themeBtn.Text = " Тема меню: " .. themeLabels[themeIdx]
+    
+    local theme = Themes[CurrentTheme]
+    MainFrame.BackgroundColor3 = theme.Primary
+    MainStroke.Color = theme.Stroke
 end)
-
-addToggle(MiscTab, "SpinBot (Крутилка)", function(s)
-    Settings.Misc.Spin = s
-    spinSubFrame.Visible = s
-end)
-
--- ==================== ВКЛАДКА 3: COMBAT ====================
-local CombatTab = createTab("COMBAT")
-local combatInfo = Instance.new("TextLabel", CombatTab)
-combatInfo.BackgroundTransparency = 1
-combatInfo.Size = UDim2.new(1, -10, 0, 50)
-combatInfo.Font = Enum.Font.GothamBold
-combatInfo.Text = "Скоро..."
-combatInfo.TextColor3 = Color3.fromRGB(150, 150, 165)
-combatInfo.TextSize = 16
-combatInfo.TextXAlignment = Enum.TextXAlignment.Center
 
 -- ==================== РЕНДЕР И ОБРАБОТКА ====================
 
@@ -648,7 +602,6 @@ local function setupPlayerESP(player)
 
     local highlight = Instance.new("Highlight")
     highlight.Parent = CoreGui
-    highlight.Adornee = nil
     highlight.FillTransparency = 0.5
     highlight.Enabled = false
 
@@ -706,52 +659,79 @@ local function setupPlayerESP(player)
             tracer.Visible = false
         end
     end)
-
-    player.AncestryChanged:Connect(function(_, parent)
-        if not parent then
-            connection:Disconnect()
-            highlight:Destroy()
-            box:Remove()
-            tracer:Remove()
-        end
-    end)
 end
 
 for _, p in ipairs(Players:GetPlayers()) do setupPlayerESP(p) end
 Players.PlayerAdded:Connect(setupPlayerESP)
 
--- Трейсеры пуль (только при выстреле из пистолета)
-local function monitorToolForTracers(tool)
+-- Улучшенные и объемные Трейсеры пуль из дула пистолета + Silent Aim
+local function monitorTool(tool)
     if tool:IsA("Tool") and (tool.Name:lower():find("gun") or tool.Name:lower():find("revolver") or tool.Name:lower():find("пистолет")) then
         tool.Activated:Connect(function()
-            if not Settings.Visuals.BulletTracers then return end
             local mouse = LocalPlayer:GetMouse()
-            local line = Drawing.new("Line")
-            line.Visible = true
-            line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-            line.To = Vector2.new(mouse.X, mouse.Y)
-            line.Color = Settings.Visuals.BulletTracerColor
-            line.Thickness = (Settings.Visuals.BulletTracerMode == "Neon") and 3 or 1
             
-            task.delay(0.2, function()
-                line:Remove()
+            -- Silent Aim реализация
+            if Settings.Combat.SilentAim then
+                for _, player in ipairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and getPlayerRole(player) == "Murderer" then
+                        local char = player.Character
+                        local root = char and char:FindFirstChild("HumanoidRootPart")
+                        if root then
+                            local screenPos, onScreen = Camera:WorldToViewportPoint(root.Position)
+                            if onScreen then
+                                local dist = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(mouse.X, mouse.Y)).Magnitude
+                                if dist <= Settings.Combat.SilentRadius then
+                                    -- Авто-наведение или симуляция удара по мардеру
+                                    pcall(function()
+                                        firetouchinterest(root, tool.Handle, 0)
+                                        firetouchinterest(root, tool.Handle, 1)
+                                    end)
+                                    break
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+
+            -- Tracer Bullets (из дула / Handle с большой толщиной)
+            if not Settings.Visuals.BulletTracers then return end
+            
+            local handle = tool:FindFirstChild("Handle")
+            local startPos = handle and handle.Position or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") and LocalPlayer.Character.Head.Position) or Camera.CFrame.Position
+            local startScreen, startOnScreen = Camera:WorldToViewportPoint(startPos)
+            
+            local line1 = Drawing.new("Line")
+            local line2 = Drawing.new("Line")
+            
+            for _, l in ipairs({line1, line2}) do
+                l.Visible = true
+                l.From = startOnScreen and Vector2.new(startScreen.X, startScreen.Y) or Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+                l.To = Vector2.new(mouse.X, mouse.Y)
+                l.Color = Settings.Visuals.BulletTracerColor
+                l.Thickness = (Settings.Visuals.BulletTracerMode == "Neon") and 5 or 3
+            end
+            
+            task.delay(0.25, function()
+                line1:Remove()
+                line2:Remove()
             end)
         end)
     end
 end
 
 LocalPlayer.CharacterAdded:Connect(function(char)
-    char.ChildAdded:Connect(monitorToolForTracers)
+    char.ChildAdded:Connect(monitorTool)
 end)
 if LocalPlayer.Character then
-    for _, item in ipairs(LocalPlayer.Character:GetChildren()) do monitorToolForTracers(item) end
+    for _, item in ipairs(LocalPlayer.Character:GetChildren()) do monitorTool(item) end
 end
 if LocalPlayer:FindFirstChildOfClass("Backpack") then
-    LocalPlayer.Backpack.ChildAdded:Connect(monitorToolForTracers)
-    for _, item in ipairs(LocalPlayer.Backpack:GetChildren()) do monitorToolForTracers(item) end
+    LocalPlayer.Backpack.ChildAdded:Connect(monitorTool)
+    for _, item in ipairs(LocalPlayer.Backpack:GetChildren()) do monitorTool(item) end
 end
 
--- Подсветка упавшего пистолета и сообщение
+-- Подсветка упавшего пистолета
 local gunHighlight = Instance.new("Highlight")
 gunHighlight.Parent = CoreGui
 gunHighlight.FillColor = Color3.fromRGB(0, 150, 255)
@@ -785,11 +765,9 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Общий цикл (Anti-Fling, Noclip, SpinBot)
+-- Общий цикл (Anti-Fling, Noclip)
 RunService.Stepped:Connect(function()
     local char = LocalPlayer.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-
     if Settings.Misc.AntiFling then
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character then
@@ -809,10 +787,6 @@ RunService.Stepped:Connect(function()
             end
         end
     end
-
-    if Settings.Misc.Spin and root then
-        root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(Settings.Misc.SpinSpeed), 0)
-    end
 end)
 
-print("Project Sky 1.0 успешно загружен!")
+print("Project Sky 1.1 успешно загружен!")
