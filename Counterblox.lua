@@ -1,5 +1,5 @@
 --[[
-    Project Sky - Murder Mystery 2 (Pulse Hub Style UI + Fixed Misc)
+    Project Sky 1.0 - Murder Mystery 2 (Full Script: Intro + Minimize/Close + Fixed Combat/Misc/Visuals)
 ]]--
 
 if _G.ProjectSkyMM2Loaded then
@@ -13,9 +13,42 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
+
+-- ==================== ИНТРО АНИМАЦИЯ ====================
+local IntroGui = Instance.new("ScreenGui")
+IntroGui.Name = "ProjectSkyIntro"
+IntroGui.Parent = CoreGui
+
+local IntroBg = Instance.new("Frame", IntroGui)
+IntroBg.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+IntroBg.Size = UDim2.new(1, 0, 1, 0)
+IntroBg.BackgroundTransparency = 0
+
+local IntroText = Instance.new("TextLabel", IntroBg)
+IntroText.BackgroundTransparency = 1
+IntroText.AnchorPoint = Vector2.new(0.5, 0.5)
+IntroText.Position = UDim2.new(-0.5, 0, 0.5, 0)
+IntroText.Size = UDim2.new(0, 500, 0, 100)
+IntroText.Font = Enum.Font.GothamBold
+IntroText.Text = "PROJECT SKY <font color='#8c46ff'>1.0</font>"
+IntroText.RichText = true
+IntroText.TextColor3 = Color3.fromRGB(255, 255, 255)
+IntroText.TextSize = 36
+IntroText.TextXAlignment = Enum.TextXAlignment.Center
+
+TweenService:Create(IntroText, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
+
+task.wait(2.2)
+
+TweenService:Create(IntroBg, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
+TweenService:Create(IntroText, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
+
+task.wait(0.6)
+IntroGui:Destroy()
 
 -- Настройки
 local Settings = {
@@ -25,7 +58,9 @@ local Settings = {
         Tracers = false,
         BulletTracers = false,
         BulletTracerMode = "Simple",
-        BulletTracerColor = Color3.fromRGB(140, 70, 255)
+        BulletTracerColor = Color3.fromRGB(140, 70, 255),
+        GunAlert = false,
+        GunESP = false
     },
     Misc = {
         AntiFling = false,
@@ -78,26 +113,50 @@ local function getPlayerRole(player)
     end
 end
 
--- ==================== PULSE HUB UI STYLE ====================
+-- ==================== ОСНОВНОЙ ГУИ (ПОЯВЛЯЕТСЯ ПОСЛЕ ИНТРО) ====================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "PulseHubStyle"
+ScreenGui.Name = "ProjectSkyMM2"
 ScreenGui.Parent = CoreGui
+
+-- Сообщение внизу экрана (Упал пистолет)
+local GunAlertLabel = Instance.new("TextLabel", ScreenGui)
+GunAlertLabel.Name = "GunAlertLabel"
+GunAlertLabel.AnchorPoint = Vector2.new(0.5, 1)
+GunAlertLabel.Position = UDim2.new(0.5, 0, 1, -25)
+GunAlertLabel.Size = UDim2.new(0, 320, 0, 36)
+GunAlertLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+GunAlertLabel.Font = Enum.Font.GothamBold
+GunAlertLabel.Text = "⚠️ Пистолет упал на карте!"
+GunAlertLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
+GunAlertLabel.TextSize = 13
+GunAlertLabel.Visible = false
+Instance.new("UICorner", GunAlertLabel).CornerRadius = UDim.new(0, 6)
+local alertStroke = Instance.new("UIStroke", GunAlertLabel)
+alertStroke.Color = Color3.fromRGB(255, 60, 60)
+alertStroke.Thickness = 1.5
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(14, 14, 18) -- Глубокий темный фон Pulse Hub
+MainFrame.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
 MainFrame.BorderSizePixel = 0
+-- Плавное появление (стартует чуть меньше и прозрачным)
 MainFrame.Position = UDim2.new(0.5, -230, 0.5, -165)
 MainFrame.Size = UDim2.new(0, 460, 0, 330)
+MainFrame.BackgroundTransparency = 1
 
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
 local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Color = Color3.fromRGB(60, 30, 95) -- Неоново-фиолетовая граница
+MainStroke.Color = Color3.fromRGB(60, 30, 95)
 MainStroke.Thickness = 1.5
+MainStroke.Transparency = 1
 
--- Верхняя панель (Шапка)
+-- Анимация появления главного окна
+TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+TweenService:Create(MainStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0}):Play()
+
+-- Шапка
 local TopBar = Instance.new("Frame", MainFrame)
 TopBar.Name = "TopBar"
 TopBar.BackgroundTransparency = 1
@@ -106,18 +165,111 @@ TopBar.Size = UDim2.new(1, 0, 0, 40)
 local Title = Instance.new("TextLabel", TopBar)
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 15, 0, 0)
-Title.Size = UDim2.new(1, -15, 1, 0)
+Title.Size = UDim2.new(1, -100, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "PULSE HUB <font color='#8c46ff'>| MM2 Advanced</font>"
+Title.Text = "PROJECT SKY <font color='#8c46ff'>| MM2 Advanced</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.fromRGB(240, 240, 245)
 Title.TextSize = 15
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
+-- Кнопка сворачивания (минимизации)
+local MinimizeBtn = Instance.new("TextButton", TopBar)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+MinimizeBtn.Position = UDim2.new(1, -65, 0.5, -12)
+MinimizeBtn.Size = UDim2.new(0, 24, 0, 24)
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.Text = "-"
+MinimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
+MinimizeBtn.TextSize = 14
+Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0, 6)
+
+-- Кнопка закрытия (крестик)
+local CloseBtn = Instance.new("TextButton", TopBar)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(60, 20, 30)
+CloseBtn.Position = UDim2.new(1, -35, 0.5, -12)
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+CloseBtn.TextSize = 12
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
+
+-- Кнопка восстановления (появляется внутри свернутого прямоугольника)
+local RestoreBtn = Instance.new("TextButton", MainFrame)
+RestoreBtn.BackgroundTransparency = 1
+RestoreBtn.Size = UDim2.new(1, 0, 1, 0)
+RestoreBtn.Font = Enum.Font.GothamBold
+RestoreBtn.Text = "Project Sky"
+RestoreBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+RestoreBtn.TextSize = 13
+RestoreBtn.Visible = false
+RestoreBtn.ZIndex = 10
+
+local isMinimized = false
+local normalSize = UDim2.new(0, 460, 0, 330)
+local normalPos = UDim2.new(0.5, -230, 0.5, -165)
+
+local TabContainer = Instance.new("ScrollingFrame", MainFrame)
+TabContainer.BackgroundTransparency = 1
+TabContainer.Position = UDim2.new(0, 10, 0, 50)
+TabContainer.Size = UDim2.new(0, 125, 1, -60)
+TabContainer.ScrollBarThickness = 0
+
+local TabListLayout = Instance.new("UIListLayout", TabContainer)
+TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabListLayout.Padding = UDim.new(0, 6)
+
+local ContentContainer = Instance.new("Frame", MainFrame)
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Position = UDim2.new(0, 145, 0, 50)
+ContentContainer.Size = UDim2.new(1, -155, 1, -60)
+
+-- Логика сворачивания / разворачивания
+MinimizeBtn.MouseButton1Click:Connect(function()
+    isMinimized = true
+    TabContainer.Visible = false
+    ContentContainer.Visible = false
+    Title.Visible = false
+    MinimizeBtn.Visible = false
+    CloseBtn.Visible = false
+    
+    TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 160, 0, 34),
+        Position = UDim2.new(0.5, -80, 0, 10)
+    }):Play()
+    
+    task.wait(0.2)
+    RestoreBtn.Visible = true
+end)
+
+RestoreBtn.MouseButton1Click:Connect(function()
+    isMinimized = false
+    RestoreBtn.Visible = false
+    
+    TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = normalSize,
+        Position = normalPos
+    }):Play()
+    
+    task.wait(0.2)
+    TabContainer.Visible = true
+    ContentContainer.Visible = true
+    Title.Visible = true
+    MinimizeBtn.Visible = true
+    CloseBtn.Visible = true
+end)
+
+-- Логика полного закрытия скрипта
+CloseBtn.MouseButton1Click:Connect(function()
+    _G.ProjectSkyMM2Loaded = false
+    ScreenGui:Destroy()
+end)
+
 -- Перетаскивание UI
 local dragging, dragStart, startPos
 TopBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+    if not isMinimized and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
         dragging = true
         dragStart = input.Position
         startPos = MainFrame.Position
@@ -129,28 +281,11 @@ TopBar.InputEnded:Connect(function(input)
     end
 end)
 UserInputService.InputChanged:Connect(function(input)
-    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragging then
+    if not isMinimized and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragging then
         local delta = input.Position - dragStart
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
-
--- Боковая панель вкладок (Pulse Sidebar)
-local TabContainer = Instance.new("ScrollingFrame", MainFrame)
-TabContainer.BackgroundTransparency = 1
-TabContainer.Position = UDim2.new(0, 10, 0, 50)
-TabContainer.Size = UDim2.new(0, 125, 1, -60)
-TabContainer.ScrollBarThickness = 0
-
-local TabListLayout = Instance.new("UIListLayout", TabContainer)
-TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-TabListLayout.Padding = UDim.new(0, 6)
-
--- Область контента
-local ContentContainer = Instance.new("Frame", MainFrame)
-ContentContainer.BackgroundTransparency = 1
-ContentContainer.Position = UDim2.new(0, 145, 0, 50)
-ContentContainer.Size = UDim2.new(1, -155, 1, -60)
 
 local Tabs = {}
 local function createTab(name)
@@ -181,7 +316,7 @@ local function createTab(name)
         end
         tabContent.Visible = true
         tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        tabBtn.BackgroundColor3 = Color3.fromRGB(110, 40, 210) -- Фиолетовый активный цвет Pulse Hub
+        tabBtn.BackgroundColor3 = Color3.fromRGB(110, 40, 210)
     end)
 
     if #Tabs == 0 then
@@ -234,6 +369,8 @@ local VisualsTab = createTab("VISUALS")
 addToggle(VisualsTab, "Highlight ESP", function(s) Settings.Visuals.Highlight = s end)
 addToggle(VisualsTab, "Boxes ESP", function(s) Settings.Visuals.Boxes = s end)
 addToggle(VisualsTab, "Tracers", function(s) Settings.Visuals.Tracers = s end)
+addToggle(VisualsTab, "Gun ESP (Подсветка)", function(s) Settings.Visuals.GunESP = s end)
+addToggle(VisualsTab, "Gun Drop Alert", function(s) Settings.Visuals.GunAlert = s end)
 
 local bulletSubFrame = Instance.new("Frame", VisualsTab)
 bulletSubFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
@@ -294,12 +431,11 @@ end)
 -- ==================== ВКЛАДКА 2: MISC ====================
 local MiscTab = createTab("MISC")
 
--- 1. Anti-Fling
 addToggle(MiscTab, "Anti-Fling", function(s)
     Settings.Misc.AntiFling = s
 end)
 
--- 2. Target Fling (Выбор цели + Отдельный запуск вниз)
+-- Target Fling (Реальный флинг)
 local flingSubFrame = Instance.new("Frame", MiscTab)
 flingSubFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 flingSubFrame.Size = UDim2.new(1, -10, 0, 72)
@@ -340,36 +476,44 @@ local function executeFling()
     
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
+    local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
     
-    if not root or not target.Character:FindFirstChild("HumanoidRootPart") then return end
+    if not root or not targetRoot then return end
 
     if flingConnection then flingConnection:Disconnect() end
 
     local bav = Instance.new("BodyAngularVelocity")
     bav.Name = "FlingForce"
-    bav.AngularVelocity = Vector3.new(999999, 999999, 999999)
+    bav.AngularVelocity = Vector3.new(99999, 99999, 99999)
     bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
     bav.Parent = root
+
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = "FlingVel"
+    bv.Velocity = Vector3.new(0, 1500, 0)
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bv.Parent = root
 
     local oldCFrame = root.CFrame
     local startTime = tick()
 
     flingConnection = RunService.Heartbeat:Connect(function()
         if target.Character and target.Character:FindFirstChild("HumanoidRootPart") and (tick() - startTime < 1.2) then
-            root.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, -3.5, 0)
-            root.Velocity = Vector3.new(0, -10000, 0)
+            root.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(math.random(-2,2), 0, math.random(-2,2))
+            root.Velocity = Vector3.new(99999, 99999, 99999)
         else
             if flingConnection then flingConnection:Disconnect() end
             if bav then bav:Destroy() end
+            if bv then bv:Destroy() end
             root.CFrame = oldCFrame
             root.Velocity = Vector3.new(0, 0, 0)
         end
     end)
 end
 
-addButton(flingSubFrame, "🚀 Запустить Fling (Вниз)", executeFling)
+addButton(flingSubFrame, "🚀 Запустить Fling", executeFling)
 
--- 3. Fly (Полёт)
+-- Fly
 local flySubFrame = Instance.new("Frame", MiscTab)
 flySubFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 flySubFrame.Size = UDim2.new(1, -10, 0, 32)
@@ -455,10 +599,9 @@ addToggle(MiscTab, "Fly (Полёт)", function(state)
     end
 end)
 
--- 4. Noclip
 addToggle(MiscTab, "Noclip", function(s) Settings.Misc.Noclip = s end)
 
--- 5. SpinBot
+-- SpinBot
 local spinSubFrame = Instance.new("Frame", MiscTab)
 spinSubFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 spinSubFrame.Size = UDim2.new(1, -10, 0, 32)
@@ -486,6 +629,17 @@ addToggle(MiscTab, "SpinBot (Крутилка)", function(s)
     Settings.Misc.Spin = s
     spinSubFrame.Visible = s
 end)
+
+-- ==================== ВКЛАДКА 3: COMBAT ====================
+local CombatTab = createTab("COMBAT")
+local combatInfo = Instance.new("TextLabel", CombatTab)
+combatInfo.BackgroundTransparency = 1
+combatInfo.Size = UDim2.new(1, -10, 0, 50)
+combatInfo.Font = Enum.Font.GothamBold
+combatInfo.Text = "Скоро..."
+combatInfo.TextColor3 = Color3.fromRGB(150, 150, 165)
+combatInfo.TextSize = 16
+combatInfo.TextXAlignment = Enum.TextXAlignment.Center
 
 -- ==================== РЕНДЕР И ОБРАБОТКА ====================
 
@@ -566,21 +720,72 @@ end
 for _, p in ipairs(Players:GetPlayers()) do setupPlayerESP(p) end
 Players.PlayerAdded:Connect(setupPlayerESP)
 
--- Рендер пулевых трейсеров
-RunService.RenderStepped:Connect(function()
-    if Settings.Visuals.BulletTracers then
-        local tracerBeam = Drawing.new("Line")
-        tracerBeam.Visible = true
-        tracerBeam.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-        tracerBeam.To = Vector2.new(Camera.ViewportSize.X / 2 + math.random(-60, 60), Camera.ViewportSize.Y / 2 + math.random(-60, 60))
-        tracerBeam.Color = Settings.Visuals.BulletTracerColor
-        tracerBeam.Thickness = (Settings.Visuals.BulletTracerMode == "Neon") and 3 or 1
+-- Трейсеры пуль (только при выстреле из пистолета)
+local function monitorToolForTracers(tool)
+    if tool:IsA("Tool") and (tool.Name:lower():find("gun") or tool.Name:lower():find("revolver") or tool.Name:lower():find("пистолет")) then
+        tool.Activated:Connect(function()
+            if not Settings.Visuals.BulletTracers then return end
+            local mouse = LocalPlayer:GetMouse()
+            local line = Drawing.new("Line")
+            line.Visible = true
+            line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+            line.To = Vector2.new(mouse.X, mouse.Y)
+            line.Color = Settings.Visuals.BulletTracerColor
+            line.Thickness = (Settings.Visuals.BulletTracerMode == "Neon") and 3 or 1
+            
+            task.delay(0.2, function()
+                line:Remove()
+            end)
+        end)
+    end
+end
 
-        task.delay(0.05, function() tracerBeam:Remove() end)
+LocalPlayer.CharacterAdded:Connect(function(char)
+    char.ChildAdded:Connect(monitorToolForTracers)
+end)
+if LocalPlayer.Character then
+    for _, item in ipairs(LocalPlayer.Character:GetChildren()) do monitorToolForTracers(item) end
+end
+if LocalPlayer:FindFirstChildOfClass("Backpack") then
+    LocalPlayer.Backpack.ChildAdded:Connect(monitorToolForTracers)
+    for _, item in ipairs(LocalPlayer.Backpack:GetChildren()) do monitorToolForTracers(item) end
+end
+
+-- Подсветка упавшего пистолета и сообщение
+local gunHighlight = Instance.new("Highlight")
+gunHighlight.Parent = CoreGui
+gunHighlight.FillColor = Color3.fromRGB(0, 150, 255)
+gunHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+gunHighlight.FillTransparency = 0.3
+gunHighlight.Enabled = false
+
+RunService.RenderStepped:Connect(function()
+    local foundGun = nil
+    for _, obj in ipairs(Workspace:GetChildren()) do
+        if obj:IsA("Tool") and (obj.Name:lower():find("gun") or obj.Name:lower():find("revolver") or obj.Name:lower():find("пистолет")) then
+            local isDropped = true
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player.Character and obj:IsDescendantOf(player.Character) then isDropped = false end
+                if player.Backpack and obj:IsDescendantOf(player.Backpack) then isDropped = false end
+            end
+            if isDropped then
+                foundGun = obj
+                break
+            end
+        end
+    end
+
+    if foundGun then
+        gunHighlight.Adornee = foundGun
+        gunHighlight.Enabled = Settings.Visuals.GunESP
+        GunAlertLabel.Visible = Settings.Visuals.GunAlert
+    else
+        gunHighlight.Enabled = false
+        GunAlertLabel.Visible = false
     end
 end)
 
--- Цикл Anti-Fling, Noclip и SpinBot
+-- Общий цикл (Anti-Fling, Noclip, SpinBot)
 RunService.Stepped:Connect(function()
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -610,4 +815,4 @@ RunService.Stepped:Connect(function()
     end
 end)
 
-print("Pulse Hub (MM2) стиль успешно запущен!")
+print("Project Sky 1.0 успешно загружен!")
